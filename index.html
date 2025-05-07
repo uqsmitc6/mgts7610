@@ -756,16 +756,21 @@
     
     // Function to launch the chatbot
     function launchChatbot(studentData, moduleId) {
+      // Get the module title from the page
+      const moduleTitle = document.getElementById('module-specific-title').textContent;
+      
       // Prepare the chatbot URL with Zapier integration
       let chatbotUrl = "https://interfaces.zapier.com/embed/chatbot/cmad6y3sx001ayww63u8irixx";
       
-      // Pass all three parameters to the chatbot
+      // Pass all parameters to the chatbot
       chatbotUrl += `?studentId=${encodeURIComponent(studentData.id)}`;
       chatbotUrl += `&studentName=${encodeURIComponent(studentData.name)}`;
       chatbotUrl += `&moduleId=${encodeURIComponent(moduleId)}`;
+      chatbotUrl += `&title=${encodeURIComponent(moduleTitle)}`;
       
       console.log("Loading chatbot with URL:", chatbotUrl);
       console.log("Module ID being passed:", moduleId);
+      console.log("Module Title being passed:", moduleTitle);
       
       // Create an iframe to embed the chatbot
       const iframe = document.createElement('iframe');
