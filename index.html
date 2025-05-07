@@ -497,7 +497,9 @@
     // Get URL parameters
     function getUrlParam(param) {
       const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
+      const value = urlParams.get(param);
+      console.log(`Getting URL parameter: ${param} = ${value}`);
+      return value;
     }
     
     // Store module information
@@ -506,6 +508,9 @@
     
     // Set module specific title
     document.getElementById('module-specific-title').textContent = moduleTitle;
+    
+    console.log("Module ID from URL:", moduleId);
+    console.log("Module Title from URL:", moduleTitle);
     
     // Get DOM elements
     const avatarContainer = document.getElementById('avatar-container');
@@ -760,6 +765,7 @@
       chatbotUrl += `&moduleId=${encodeURIComponent(moduleId)}`;
       
       console.log("Loading chatbot with URL:", chatbotUrl);
+      console.log("Module ID being passed:", moduleId);
       
       // Create an iframe to embed the chatbot
       const iframe = document.createElement('iframe');
