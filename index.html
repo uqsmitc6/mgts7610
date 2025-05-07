@@ -505,12 +505,14 @@
     // Store module information
     const moduleId = getUrlParam('module') || '1'; // Default to module 1 if not specified
     const moduleTitle = getUrlParam('title') || 'Writing Support';
+    const modulePrompt = getUrlParam('prompt') || 'exploring this topic together'; // Default prompt if not specified
     
     // Set module specific title
     document.getElementById('module-specific-title').textContent = moduleTitle;
     
     console.log("Module ID from URL:", moduleId);
     console.log("Module Title from URL:", moduleTitle);
+    console.log("Module Prompt from URL:", modulePrompt);
     
     // Get DOM elements
     const avatarContainer = document.getElementById('avatar-container');
@@ -756,7 +758,7 @@
     
     // Function to launch the chatbot
     function launchChatbot(studentData, moduleId) {
-      // Get the module title from the page
+      // Get the module title and prompt from the page/URL parameters
       const moduleTitle = document.getElementById('module-specific-title').textContent;
       
       // Prepare the chatbot URL with Zapier integration
@@ -767,10 +769,12 @@
       chatbotUrl += `&studentName=${encodeURIComponent(studentData.name)}`;
       chatbotUrl += `&moduleId=${encodeURIComponent(moduleId)}`;
       chatbotUrl += `&title=${encodeURIComponent(moduleTitle)}`;
+      chatbotUrl += `&prompt=${encodeURIComponent(modulePrompt)}`;
       
       console.log("Loading chatbot with URL:", chatbotUrl);
       console.log("Module ID being passed:", moduleId);
       console.log("Module Title being passed:", moduleTitle);
+      console.log("Module Prompt being passed:", modulePrompt);
       
       // Create an iframe to embed the chatbot
       const iframe = document.createElement('iframe');
