@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MGTS7610 Writing Assistant</title>
+  <style>
+    :root {
+      --primary-color: #006DAE; /* UQ blue */
+      --primary-light: #3B8AC4;
+      --secondary-color: #4F2D7F; /* UQ purple */
+      --dark-color: #121212;
+      --light-text: #f5f5f5;
+      --border-radius: 12px;
+      --transition: all 0.3s ease;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--dark-color);
+      color: var(--light-text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 1200px;
+      width: 100%;
+    }
+    
+    .header {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 48px;
+      color: var(--light-text);
+      margin-bottom: 5px;
+      text-shadow: 0 0 10px rgba(0, 109, 174, 0.6);
+    }
+    
+    .header p {
+      color: #aaa;
+      font-size: 20px;
+    }
+    
+    /* Avatar Image Fallback */
+    .avatar-image-fallback {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 8px solid var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background-color: #004C7F;
+      overflow: hidden;
+    }
+    
+    .assistant-text {
+      position: absolute;
+      font-size: 28px;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      z-index: 1;
+    }
+    
+    /* Avatar Image and Login Container */
+    .avatar-container {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      margin: 0 auto;
+      border-radius: 50%;
+      overflow: visible; /* Changed from hidden to allow overlay to extend beyond */
+      cursor: pointer;
+      box-shadow: 0 0 50px rgba(0, 109, 174, 0.4);
+      transition: transform 0.3s ease;
+    }
+    
+    .avatar-container:active {
+      transform: scale(0.98);
+    }
+    
+    .avatar-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: var(--transition);
+      border-radius: 50%;
+      border: 8px solid var(--primary-color);
+      background-color: #004C7F;
+    }
+    
+    .login-overlay {
+      position: absolute;
+      top: -25px;
+      left: -25px;
+      width: calc(100% + 50px);
+      height: calc(100% + 50px);
+      background-color: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: var(--transition);
+      border-radius: 20px;
+      padding: 40px;
+      color: white;
+      z-index: 10;
+      box-shadow: 0 0 30px rgba(0, 109, 174, 0.7);
+    }
+    
+    .avatar-container:hover .avatar-image {
+      filter: blur(3px) brightness(0.7);
+    }
+    
+    .avatar-container:hover .login-overlay {
+      opacity: 1;
+    }
+    
+    /* Pulsing animation for the avatar container */
+    .pulse-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 50%;
+      border: 3px solid rgba(0, 109, 174, 0.5);
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      70% {
+        transform: scale(1.05);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 0;
+      }
+    }
+    
+    .login-form {
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 30px;
+      border-radius: 20px;
+      backdrop-filter: blur(5px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 20px rgba(0, 109, 174, 0.5);
+    }
+    
+    .form-title {
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: white;
+      text-shadow: 0 0 10px rgba(0, 109, 174, 0.8);
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 15px 20px;
+      border: 2px solid rgba(0, 109, 174, 0.6);
+      border-radius: 10px;
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      transition: var(--transition);
+      min-height: 50px;
+    }
+    
+    .form-input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--secondary-color);
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 15px 0;
+      border: none;
+      border-radius: 10px;
+      background-color: var(--primary-color);
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .btn:hover {
+      background-color: var(--primary-light);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .id-hint {
+      margin-top: 15px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    /* Error and loading states */
+    #error-msg {
+      color: #ff6b6b;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    
+    #loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 15px;
+      color: white;
+    }
+    
+    .loading-spinner {
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Verification confirmation */
+    .verification-container {
+      max-width: 450px;
+      width: 90%;
+      background-color: rgba(20, 20, 20, 0.9);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      border-top: 5px solid var(--primary-color);
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    #success-msg {
+      color: #4caf50;
+      font-size: 22px;
+      margin-bottom: 25px;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .btn-secondary {
+      background-color: #333;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #444;
+    }
+    
+    .btn-danger {
+      background-color: #f44336;
+    }
+    
+    .btn-danger:hover {
+      background-color: #e53935;
+    }
+    
+    /* Chat interface */
+    .chat-interface {
+      width: 100%;
+      max-width: 900px;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    .student-info {
+      background-color: rgba(30, 30, 30, 0.9);
+      padding: 15px 20px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .student-name {
+      font-weight: 600;
+      color: var(--light-text);
+    }
+    
+    .student-id {
+      font-family: monospace;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #ccc;
+    }
+    
+    #chat-container {
+      width: 100%;
+      height: 600px;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+      background-color: rgba(20, 20, 20, 0.9);
+      flex-grow: 1;
+    }
+    
+    /* Solution for the iframe size issue */
+    .chat-interface {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #chat-container {
+      flex: 1;
+      min-height: 500px;
+      /* Set a fixed height that works well across devices */
+      height: 600px;
+    }
+    
+    .disclaimer {
+      max-width: 800px;
+      margin-top: 40px;
+      text-align: center;
+      font-size: 14px;
+      color: #888;
+      line-height: 1.6;
+      padding: 0 20px;
+      margin-bottom: 20px;
+      clear: both;
+    }
+    
+    /* Hide mobile elements by default */
+    .mobile-login-button, .close-overlay, .mobile-tap-instruction {
+      display: none;
+    }
+    
+    @media (max-width: 768px) {
+      .avatar-container {
+        width: 150px;
+        height: 150px;
+      }
+      
+      .header h1 {
+        font-size: 36px;
+      }
+      
+      .header p {
+        font-size: 16px;
+      }
+      
+      .login-form {
+        padding: 20px;
+        width: 95%;
+        max-width: 350px;
+      }
+      
+      .form-title {
+        font-size: 22px;
+      }
+      
+      .form-input {
+        font-size: 16px;
+        padding: 12px 15px;
+      }
+      
+      .id-hint {
+        font-size: 13px;
+      }
+      
+      #chat-container {
+        height: 500px;
+      }
+      
+      /* Make sure the login overlay is still usable on mobile */
+      .login-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="header">
+      <h1>MGTS7610 Writing Assistant</h1>
+      <p id="module-specific-title">Writing Support</p>
+    </div>
+    
+    <!-- Main avatar with login overlay -->
+    <div id="login-section">
+      <div class="avatar-container" id="avatar-container">
+        <div class="pulse-ring"></div>
+        <!-- Image with fallback -->
+        <img src="https://cdn.sstatic.net/Img/teams/teams-illo-free-sidebar-promo.svg" alt="MGTS7610 Assistant" class="avatar-image" crossorigin="anonymous" onerror="this.style.display='none'; this.parentNode.querySelector('.avatar-image-fallback').style.display='flex';">
+        
+        <div class="avatar-image-fallback" style="display: none;">
+          <span class="assistant-text">MGTS7610</span>
+        </div>
+        
+        <div class="login-overlay" id="login-overlay">
+          <!-- Add close button for mobile -->
+          <div class="close-overlay" id="close-overlay">×</div>
+          
+          <div class="login-form">
+            <h3 class="form-title">Enter Student ID</h3>
+            <input type="text" id="studentIdInput" class="form-input" placeholder="e.g., s1234567" autocomplete="off">
+            <button class="btn" id="verifyBtn">Verify ID</button>
+            
+            <p class="id-hint">Please enter your UQ student ID in the format sXXXXXXX</p>
+            <p id="error-msg"></p>
+            
+            <div id="loading" style="display: none;">
+              <div class="loading-spinner"></div>
+              <span>Verifying...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dedicated login button for mobile -->
+      <button class="mobile-login-button" id="mobile-login-button">
+        Login to Assistant
+      </button>
+    </div>
+    
+    <!-- Verification Confirmation Section -->
+    <div id="verification-container" style="display: none;" class="verification-container">
+      <p id="success-msg"></p>
+      
+      <div class="button-group">
+        <button class="btn" id="confirmBtn">Yes, that's me</button>
+        <button class="btn btn-danger" id="cancelBtn">No, that's not me</button>
+      </div>
+    </div>
+    
+    <!-- Chat Interface -->
+    <div id="chat-interface" style="display: none;" class="chat-interface">
+      <div class="student-info">
+        <span class="student-name" id="student-name-display"></span>
+        <span class="student-id" id="student-id-display"></span>
+      </div>
+      
+      <div id="chat-container"></div>
+    </div>
+  </div>
+  
+  <script>
+    // Get URL parameters
+    function getUrlParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+    
+    // Store module information
+    const moduleId = getUrlParam('module') || '1'; // Default to module 1 if not specified
+    const moduleTitle = getUrlParam('title') || 'Writing Support';
+    
+    // Set module specific title
+    document.getElementById('module-specific-title').textContent = moduleTitle;
+    
+    // Get DOM elements
+    const avatarContainer = document.getElementById('avatar-container');
+    const loginOverlay = document.getElementById('login-overlay');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const loginSection = document.getElementById('login-section');
+    const verificationContainer = document.getElementById('verification-container');
+    const errorMsg = document.getElementById('error-msg');
+    const successMsg = document.getElementById('success-msg');
+    const loadingMsg = document.getElementById('loading');
+    const chatContainer = document.getElementById('chat-container');
+    const chatInterface = document.getElementById('chat-interface');
+    const studentIdInput = document.getElementById('studentIdInput');
+    const mobileLoginButton = document.getElementById('mobile-login-button');
+    const closeOverlay = document.getElementById('close-overlay');
+    
+    // Function to detect touch capability
+    function isTouchDevice() {
+      return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+    }
+    
+    // Function to show the login form
+    function showLoginForm() {
+      document.body.classList.add('mobile-form-visible');
+      avatarContainer.classList.add('mobile-form-visible');
+      
+      // Focus the input field
+      setTimeout(() => {
+        studentIdInput.focus();
+      }, 300);
+    }
+    
+    // Function to hide the login form
+    function hideLoginForm() {
+      document.body.classList.remove('mobile-form-visible');
+      avatarContainer.classList.remove('mobile-form-visible');
+    }
+    
+    // Setup event listeners based on device
+    if (isTouchDevice()) {
+      // Mobile login button shows the form
+      mobileLoginButton.addEventListener('click', showLoginForm);
+      
+      // Close button hides the form
+      closeOverlay.addEventListener('click', function(e) {
+        e.stopPropagation();
+        hideLoginForm();
+      });
+      
+      // Prevent form clicks from bubbling to container
+      loginOverlay.addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
+    } else {
+      // Desktop/non-touch behavior - clicking the avatar still works
+      avatarContainer.addEventListener('click', function() {
+        showLoginForm();
+      });
+    }
+    
+    // Store verified student data
+    let verifiedStudent = null;
+    
+    // Add debugging tools and troubleshooting functions
+    function testAPIConnection() {
+      const apiUrl = 'https://script.google.com/macros/s/AKfycbwx562gU9cfKUxz2z3pPPXFD35lqRQyPOhdsoE7nQi1vEUyjr_ZN6MtDUNpyhjY7lAGxw/exec';
+      
+      // Display testing message
+      errorMsg.textContent = "Testing API connection...";
+      errorMsg.style.color = "#ffaa00";
+      
+      // Test with a sample ID
+      const testUrl = `${apiUrl}?id=s1234567`;
+      console.log("Testing API with URL:", testUrl);
+      
+      fetch(testUrl)
+      .then(response => {
+        console.log("Test API Response:", response);
+        return response.text(); // Get the raw text first to debug
+      })
+      .then(text => {
+        console.log("Raw response text:", text);
+        
+        try {
+          // Try to parse as JSON
+          const data = JSON.parse(text);
+          console.log("Parsed JSON data:", data);
+          
+          if (data.error) {
+            errorMsg.textContent = `API responded with error: ${data.error}`;
+            errorMsg.style.color = "#ff9900";
+          } else if (data.valid === false) {
+            errorMsg.textContent = "API connection successful! ID not found in database.";
+            errorMsg.style.color = "#4caf50";
+          } else if (data.valid === true) {
+            errorMsg.textContent = `API connection successful! Verified name: ${data.name}`;
+            errorMsg.style.color = "#4caf50";
+          } else {
+            errorMsg.textContent = "API connected but returned unexpected data format.";
+            errorMsg.style.color = "#ff9900";
+          }
+        } catch (e) {
+          // Not valid JSON
+          errorMsg.textContent = "API responded but not with valid JSON: " + e.message;
+          errorMsg.style.color = "#ff6b6b";
+        }
+      })
+      .catch(err => {
+        console.error("Test API Error:", err);
+        errorMsg.textContent = `API connection error: ${err.message}`;
+        errorMsg.style.color = "#ff6b6b";
+      });
+    }
+    
+    // Add a test button to the form for debugging
+    const debugButton = document.createElement('button');
+    debugButton.type = 'button';
+    debugButton.className = 'btn btn-secondary';
+    debugButton.style.marginTop = '10px';
+    debugButton.style.backgroundColor = '#666';
+    debugButton.textContent = 'Test API Connection';
+    debugButton.onclick = testAPIConnection;
+    
+    // Insert the debug button after the error message
+    errorMsg.parentNode.insertBefore(debugButton, errorMsg.nextSibling);
+    
+    // Add event listener for the verify button
+    verifyBtn.addEventListener('click', verifyStudentId);
+    
+    // Also verify when pressing Enter in the input field
+    studentIdInput.addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        verifyStudentId();
+      }
+    });
+    
+    // Verification function
+    async function verifyStudentId() {
+      let studentId = studentIdInput.value.trim();
+      errorMsg.textContent = ""; // clear previous errors
+      
+      if (!studentId) {
+        errorMsg.textContent = "Please enter a student ID";
+        return;
+      }
+      
+      // Basic format validation for students and secret support for staff
+      const studentIdRegex = /^s\d{7}$/i;
+      const staffIdRegex = /^uq[a-z0-9]{6}$/i;
+      
+      // Allow both student and staff IDs to pass, but only show error for student format
+      if (!studentIdRegex.test(studentId) && !staffIdRegex.test(studentId)) {
+        errorMsg.textContent = "Please enter a valid student ID in the format sXXXXXXX";
+        return;
+      }
+      
+      // Normalize the case for student and staff IDs
+      if (studentId.toLowerCase().startsWith('s')) {
+        studentId = studentId.toLowerCase();
+      } else if (studentId.toLowerCase().startsWith('uq')) {
+        studentId = studentId.toLowerCase();
+      }
+      
+      // Show loading message
+      loadingMsg.style.display = "flex";
+      
+      try {
+        // Call the Google Apps Script to verify the ID
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbwx562gU9cfKUxz2z3pPPXFD35lqRQyPOhdsoE7nQi1vEUyjr_ZN6MtDUNpyhjY7lAGxw/exec';
+        console.log("Verifying student ID:", studentId);
+        console.log("Calling API URL:", apiUrl + "?id=" + encodeURIComponent(studentId));
+        
+        // Use a simpler fetch request without unnecessary options
+        const response = await fetch(`${apiUrl}?id=${encodeURIComponent(studentId)}`);
+        
+        console.log("Response status:", response.status);
+        
+        // Hide loading message
+        loadingMsg.style.display = "none";
+        
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status} - ${response.statusText}`);
+        }
+        
+        // Parse the response
+        const result = await response.json();
+        console.log("Verification result:", result);
+        
+        // Check if the ID was found
+        if (result.valid) {
+          // Store the verified student data
+          verifiedStudent = result;
+          
+          // Hide login form
+          hideLoginForm();
+          
+          // Show the confirmation section
+          loginSection.style.display = "none";
+          verificationContainer.style.display = "block";
+          successMsg.textContent = `Hello, ${result.name}! Is this correct?`;
+        } else {
+          // ID not found
+          errorMsg.textContent = "Student ID not found. Please check your ID or contact your course coordinator.";
+        }
+      } catch (err) {
+        // Hide loading message
+        loadingMsg.style.display = "none";
+        console.error("Verification error:", err);
+        errorMsg.textContent = "Error verifying ID. Please try again later.";
+      }
+    }
+    
+    // Add event listener for the confirm button
+    confirmBtn.addEventListener('click', () => {
+      if (verifiedStudent) {
+        // Hide the verification section
+        verificationContainer.style.display = "none";
+        
+        // Update student info display in the header bar
+        document.getElementById('student-name-display').textContent = verifiedStudent.name;
+        document.getElementById('student-id-display').textContent = verifiedStudent.id;
+        
+        // Show the chat interface
+        chatInterface.style.display = "block";
+        
+        // Launch the chatbot with the verified student data and module ID
+        launchChatbot(verifiedStudent, moduleId);
+      }
+    });
+    
+    // Add event listener for the cancel button
+    cancelBtn.addEventListener('click', () => {
+      // Go back to the login section
+      verificationContainer.style.display = "none";
+      loginSection.style.display = "block";
+      // Clear the input field
+      studentIdInput.value = "";
+      // Reset mobile form visibility
+      hideLoginForm();
+    });
+    
+    // Function to launch the chatbot
+    function launchChatbot(studentData, moduleId) {
+      // Prepare the chatbot URL with Zapier integration
+      let chatbotUrl = "https://interfaces.zapier.com/embed/chatbot/cmad6y3sx001ayww63u8irixx";
+      
+      // Pass all three parameters to the chatbot
+      chatbotUrl += `?studentId=${encodeURIComponent(studentData.id)}`;
+      chatbotUrl += `&studentName=${encodeURIComponent(studentData.name)}`;
+      chatbotUrl += `&moduleId=${encodeURIComponent(moduleId)}`;
+      
+      console.log("Loading chatbot with URL:", chatbotUrl);
+      
+      // Create an iframe to embed the chatbot
+      const iframe = document.createElement('iframe');
+      iframe.src = chatbotUrl;
+      iframe.width = "100%";
+      iframe.height = "100%";
+      iframe.style.border = "none";
+      iframe.setAttribute('allow', 'clipboard-write *');
+      
+      // Add the iframe to the chatbot container
+      chatContainer.innerHTML = "";
+      chatContainer.appendChild(iframe);
+    }
+  </script>
+</body>
+</html>
