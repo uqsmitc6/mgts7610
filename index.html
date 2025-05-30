@@ -71,6 +71,13 @@
       margin: 0 auto 20px;
     }
     
+    .error {
+      text-align: center;
+      color: #ff6b6b;
+      font-size: 18px;
+      padding: 40px;
+    }
+    
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -106,45 +113,80 @@
       <div class="loading-spinner"></div>
       <p>Preparing your activity...</p>
     </div>
+    <div id="error-indicator" class="error" style="display: none;">
+      <p>Activity not found. Please check the URL or contact your instructor.</p>
+    </div>
     <iframe id="chatbot-frame" style="display: none;"></iframe>
   </div>
 
   <script>
+    // Activity definitions
+    const activities = {
+      'email-subjects': {
+        module: '2',
+        title: 'Email Subject Lines',
+        prompt: 'Practice writing effective email subject lines. I will provide feedback on conciseness, clarity, and impact. First scenario: Email your team about a mandatory meeting tomorrow at 2pm for project timeline discussion. Write the subject line:'
+      },
+      'active-voice': {
+        module: '2', 
+        title: 'Active and Passive Voice',
+        prompt: 'I will give you sentences in passive voice. Rewrite them in active voice for better communication. First sentence: The report was completed by the team yesterday.'
+      },
+      'acknowledgment-country': {
+        module: '1',
+        title: 'Acknowledgment of Country',
+        prompt: 'Practice writing respectful Acknowledgments of Country using triplets and time values. I will guide you through creating meaningful acknowledgments. First task: Write an acknowledgment for a business meeting in Brisbane.'
+      },
+      'complex-clauses': {
+        module: '3',
+        title: 'Complex Clauses',
+        prompt: 'Practice writing sentences with complex clauses. I will help you combine simple sentences into more sophisticated structures. First exercise: Combine these two sentences using a complex clause: The team finished the project. The deadline was yesterday.'
+      },
+      'clarity': {
+        module: '3',
+        title: 'Improving Clarity',
+        prompt: 'Practice improving unclear sentences. I will give you confusing sentences to rewrite for better clarity. First sentence to improve: The utilization of the methodology was implemented by the stakeholders in the process.'
+      },
+      'third-person': {
+        module: '4',
+        title: 'Third Person and Past Tense',
+        prompt: 'Practice writing in third person and past tense for professional reports. I will give you first-person or present-tense sentences to convert. First sentence: I am analyzing the data and I find interesting patterns.'
+      },
+      'modal-verbs': {
+        module: '5',
+        title: 'Modal Verbs',
+        prompt: 'Practice using modal verbs for appropriate tone and certainty. I will give you sentences to rewrite using suitable modal verbs. First sentence: You complete this task by Friday. (Make this a polite request)'
+      }
+    };
+    
     // Get URL parameters
     function getUrlParam(param) {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get(param);
     }
     
-    // Get parameters from URL
-    const moduleId = getUrlParam('module') || '1';
-    const moduleTitle = getUrlParam('title') || 'Writing Activity';
-    const modulePrompt = getUrlParam('prompt') || 'Let\'s work on your writing skills';
+    // Get activity from URL
+    const activityId = getUrlParam('activity');
+    const activity = activities[activityId];
     
-    // Update the page title
-    document.getElementById('module-title').textContent = moduleTitle;
-    document.title = `MGTS7610 - ${moduleTitle}`;
-    
-    // Console logging for debugging
-    console.log('Module ID:', moduleId);
-    console.log('Module Title:', moduleTitle);
-    console.log('Module Prompt:', modulePrompt);
+    console.log('Activity ID:', activityId);
+    console.log('Activity found:', activity);
     
     // Function to launch chatbot
     function launchChatbot() {
+      if (!activity) {
+        // Show error if activity not found
+        document.getElementById('loading-indicator').style.display = 'none';
+        document.getElementById('error-indicator').style.display = 'block';
+        return;
+      }
+      
+      // Update the page title
+      document.getElementById('module-title').textContent = activity.title;
+      document.title = `MGTS7610 - ${activity.title}`;
+      
       // Build the Zapier chatbot URL with parameters
-      let chatbotUrl = "https://mgts7610.zapier.app";
-      
-      // Add parameters that your Zapier bot can use with curlys
-      const params = new URLSearchParams({
-        module: moduleId,
-        title: moduleTitle,
-        prompt: modulePrompt,
-        studentName: 'Student', // Default since no login
-        studentId: 'guest'      // Default since no login
-      });
-      
-      chatbotUrl += '?' + params.toString();
+      const chatbotUrl = `https://interfaces.zapier.com/embed/chatbot/cmad6y3sx001ayww63u8irixx?module=${activity.module}&title=${encodeURIComponent(activity.title)}&prompt=${encodeURIComponent(activity.prompt)}`;
       
       console.log('Loading chatbot with URL:', chatbotUrl);
       
