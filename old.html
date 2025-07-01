@@ -124,34 +124,44 @@
     // Activity definitions
     const activities = {
       'email-subjects': {
-        module: 'Email Subject Lines',
+        module: '2',
         title: 'Email Subject Lines',
         prompt: 'Practice writing effective email subject lines. I will provide feedback on conciseness, clarity, and impact. FIRST SCENARIO: Email your team about a mandatory meeting Friday at 2pm for project timeline discussion. Write the subject line:'
       },
       'effective-sentences': {
-        module: 'Writing Effective Sentences',
+        module: '3A',
         title: 'Writing Effective Sentences',
-        prompt: 'I have a sentence here from a business scenario that could be made clearer. Can you try rewriting it for clarity? FIRST SCENARIO: Here is the sentence: "In connection with the information we talked about regarding the current project, we want to let you know that we intend to change the deadlines." Now, see if you can make this more direct and to-the-point:'
+        prompt: 'I have a sentence here from a business scenario that could be made clearer. Can you try rewriting it for clarity? FIRST SCENARIO: Here is the sentence: "In connection with the information we talked about regarding the current project, we want to let you know that we intend to change the deadlines." Now, see if you can make this more direct and to-the-point, using effective writing techniques:'
       },
-      'hedging-boosting': {
-        module: 'Hedging and Boosting in Business Writing',
-        title: 'Hedging and Boosting in Business Writing',
-        prompt: 'Practice rewriting business sentences by adding words that make ideas softer (hedging) or stronger (boosting). FIRST SCENARIO: Here is your sentence: "The sales figures show a strong increase." Rewrite this sentence using hedging language:'
+      'active-voice': {
+        module: '2', 
+        title: 'Active and Passive Voice',
+        prompt: 'I will give you sentences in passive voice. Rewrite them in active voice for better communication. First sentence: The report was completed by the team yesterday.'
       },
-      'acknowledgement-country': {
-        module: 'Acknowledgement of Country Features',
-        title: 'Acknowledgement of Country Features',
-        prompt: 'Practice using two important language features of an Acknowledgement of Country: triplets and time values. FIRST SCENARIO: Think about the contributions of First Nations people. Complete the sentence below with a triplet that describes these contributions. "We recognise their _______, _______, and _______ contributions to our community."'
+      'acknowledgment-country': {
+        module: '1',
+        title: 'Acknowledgment of Country',
+        prompt: 'Practice writing respectful Acknowledgments of Country using triplets and time values. I will guide you through creating meaningful acknowledgments. First task: Write an acknowledgment for a business meeting in Brisbane.'
       },
-      'tone-face': {
-        module: 'Tone and Face in Communication',
-        title: 'Tone and Face in Communication',
-        prompt: 'Practice getting the tone right in professional writing. FIRST SCENARIO: Look at this sentence that is too polite and unclear: "It is my sincere and most humble pleasure to receive your timely, generous and kind invitation to attend the illustrious event at your most esteemed university." Please rewrite this to accept an invitation. Your new sentence should sound professional, clear, and sincere.'
+      'complex-clauses': {
+        module: '3',
+        title: 'Complex Clauses',
+        prompt: 'Practice writing sentences with complex clauses. I will help you combine simple sentences into more sophisticated structures. First exercise: Combine these two sentences using a complex clause: The team finished the project. The deadline was yesterday.'
       },
-      'animating-sources': {
-        module: 'Animating Sources',
-        title: 'Animating Sources',
-        prompt: 'Practice the three main ways to use sources in your writing: direct quotation, paraphrase, and summary. FIRST SCENARIO: Read this sentence from a company annual report: "Our commitment to sustainability is not just a policy; it is the core of our business." Now, write one sentence using this as a direct quotation. Remember to include quotation marks and a projecting clause:'
+      'clarity': {
+        module: '3',
+        title: 'Improving Clarity',
+        prompt: 'Practice improving unclear sentences. I will give you confusing sentences to rewrite for better clarity. First sentence to improve: The utilization of the methodology was implemented by the stakeholders in the process.'
+      },
+      'third-person': {
+        module: '4',
+        title: 'Third Person and Past Tense',
+        prompt: 'Practice writing in third person and past tense for professional reports. I will give you first-person or present-tense sentences to convert. First sentence: I am analyzing the data and I find interesting patterns.'
+      },
+      'modal-verbs': {
+        module: '5',
+        title: 'Modal Verbs',
+        prompt: 'Practice using modal verbs for appropriate tone and certainty. I will give you sentences to rewrite using suitable modal verbs. First sentence: You complete this task by Friday. (Make this a polite request)'
       }
     };
     
@@ -182,7 +192,7 @@
       document.title = `MGTS7610 - ${activity.title}`;
       
       // Build the Zapier chatbot URL with parameters
-      const chatbotUrl = `https://interfaces.zapier.com/embed/chatbot/cmad6y3sx001ayww63u8irixx?module=${encodeURIComponent(activity.module)}&title=${encodeURIComponent(activity.title)}&prompt=${encodeURIComponent(activity.prompt)}`;
+      const chatbotUrl = `https://interfaces.zapier.com/embed/chatbot/cmad6y3sx001ayww63u8irixx?module=${activity.module}&title=${encodeURIComponent(activity.title)}&prompt=${encodeURIComponent(activity.prompt)}`;
       
       console.log('Loading chatbot with URL:', chatbotUrl);
       
