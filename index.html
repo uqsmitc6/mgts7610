@@ -109,13 +109,13 @@
     <div class="module-title" id="module-title">Loading Activity...</div>
   </div>
   
-    <div id="input-hint" style="
-      display:none;
-      text-align:center;
-      font-size:18px;
-      margin:12px 0 4px;
-      color:#006DAE;">
-    Type your answer in the box below, then press Enter ↵
+  <div id="input-hint" style="
+    display:none;
+    text-align:center;
+    font-size:18px;
+    margin:12px 0 4px;
+    color:#006DAE;">
+    Type your answer in the box below, then press Enter ↵
   </div>
 
   <div class="chat-container">
@@ -150,8 +150,7 @@
       'acknowledgement-country': {
         module: 'Acknowledgement of Country Features',
         title: 'Acknowledgement of Country Features',
-        prompt: ''Let\\'s practise using two important language features that make an Acknowledgement of Country **respectful** and **powerful**: **Triplets** and **Time Values**.\\n\\nLet\\'s start by practising triplets (a group of **three words**).\\n\\nComplete the sentence below by choosing **three words** from the list. You will need to **change the words into adjectives** to fit the sentence.\\n\\n**Sentence:** "We recognise their _______, _______, and _______ contributions to our community."\\n\\n**Word ideas** (change to adjectives):\\n• culture\\n• spirit\\n• history\\n• meaning\\n• value\\n\\nWhen you\\'re ready, **type your answer in the box below** and press **Enter**.'
-'
+        prompt: 'Let\'s practise using two important language features that make an Acknowledgement of Country **respectful** and **powerful**: **Triplets** and **Time Values**.\n\nLet\'s start by practising triplets (a group of **three words**).\n\nComplete the sentence below by choosing **three words** from the list. You will need to **change the words into adjectives** to fit the sentence.\n\n**Sentence:** "We recognise their _______, _______, and _______ contributions to our community."\n\n**Word ideas** (change to adjectives):\n• culture\n• spirit\n• history\n• meaning\n• value\n\nWhen you\'re ready, **type your answer in the box below** and press **Enter**.'
       },
       'tone-face': {
         module: 'Tone and Face in Communication',
@@ -209,6 +208,9 @@
       setTimeout(() => {
         document.getElementById('loading-indicator').style.display = 'none';
         iframe.style.display = 'block';
+        
+        // Show the input hint after chatbot loads
+        document.getElementById('input-hint').style.display = 'block';
       }, 1500);
     }
     
