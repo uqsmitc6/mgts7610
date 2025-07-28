@@ -83,6 +83,11 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    @keyframes bounce {
+      0% { transform: translateX(-50%) translateY(0px); }
+      100% { transform: translateX(-50%) translateY(-5px); }
+    }
     
     @media (max-width: 768px) {
       .header {
@@ -112,18 +117,19 @@
   <div id="input-hint" style="
     display:none;
     position: fixed;
-    bottom: 80px;
+    bottom: 25px;
     left: 50%;
     transform: translateX(-50%);
     background: #006DAE;
     color: white;
-    padding: 12px 24px;
+    padding: 10px 20px;
     border-radius: 25px;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     box-shadow: 0 4px 15px rgba(0, 109, 174, 0.4);
     z-index: 1000;
-    animation: bounce 1s ease-in-out infinite alternate;">
+    animation: bounce 2s ease-in-out infinite alternate;
+    pointer-events: none;">
     💬 Type here ↓
   </div>
 
@@ -218,8 +224,19 @@
         document.getElementById('loading-indicator').style.display = 'none';
         iframe.style.display = 'block';
         
-        // Show the input hint after chatbot loads
-        document.getElementById('input-hint').style.display = 'block';
+        // Show the input hint after chatbot loads, and hide it after a few seconds
+        const inputHint = document.getElementById('input-hint');
+        inputHint.style.display = 'block';
+        
+        // Auto-hide the hint after 8 seconds
+        setTimeout(() => {
+          inputHint.style.opacity = '0';
+          inputHint.style.transition = 'opacity 1s ease';
+          setTimeout(() => {
+            inputHint.style.display = 'none';
+          }, 1000);
+        }, 8000);
+        
       }, 1500);
     }
     
