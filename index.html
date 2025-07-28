@@ -111,11 +111,20 @@
   
   <div id="input-hint" style="
     display:none;
-    text-align:center;
-    font-size:18px;
-    margin:12px 0 4px;
-    color:#006DAE;">
-    Type your answer in the box below, then press Enter ↵
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #006DAE;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0, 109, 174, 0.4);
+    z-index: 1000;
+    animation: bounce 1s ease-in-out infinite alternate;">
+    💬 Type here ↓
   </div>
 
   <div class="chat-container">
