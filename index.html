@@ -199,6 +199,55 @@
     console.log('Activity ID:', activityId);
     console.log('Activity found:', activity);
     
+    // Function to get user info from H5P
+    function getUserInfo() {
+      let userName = '';
+      let userNumber = '';
+      
+      try {
+        // Method 1: Check if H5P context is available
+        if (window.H5P && window.H5P.getContext) {
+          const context = window.H5P.getContext();
+          userName = context.user?.name || '';
+          userNumber = context.user?.id || context.user?.number || '';
+        }
+        
+        // Method 2: Check parent window for H5P data
+        if (!userName && window.parent && window.parent.H5P) {
+          const parentContext = window.parent.H5P.getContext?.();
+          userName = parentContext?.user?.name || '';
+          userNumber = parentContext?.user?.id || parentContext?.user?.number || '';
+        }
+        
+        // Method 3: Look for common LMS user data patterns
+        if (!userName) {
+          // Check for Moodle user data
+          if (window.parent.M && window.parent.M.cfg && window.parent.M.cfg.userid) {
+            userNumber = window.parent.M.cfg.userid;
+          }
+          
+          // Check for other LMS patterns
+          const possibleUserElements = window.parent.document?.querySelectorAll('[data-user-id], [data-userid], .user-info, .username');
+          if (possibleUserElements && possibleUserElements.length > 0) {
+            // Extract user info from DOM if available
+            for (let element of possibleUserElements) {
+              if (element.dataset.userId || element.dataset.userid) {
+                userNumber = element.dataset.userId || element.dataset.userid;
+                break;
+              }
+            }
+          }
+        }
+        
+        console.log('Found user info:', { userName, userNumber });
+        
+      } catch (error) {
+        console.log('Could not access user info (this is normal if not in H5P):', error);
+      }
+      
+      return { userName, userNumber };
+    }
+
     // Function to launch chatbot
     function launchChatbot() {
       if (!activity) {
@@ -212,10 +261,22 @@
       document.getElementById('module-title').textContent = activity.title;
       document.title = `MGTS7610 - ${activity.title}`;
       
-      // Build the Zapier chatbot URL with parameters
-      const chatbotUrl = `https://interfaces.zapier.com/embed/chatbot/cmad6y3sx001ayww63u8irixx?module=${encodeURIComponent(activity.module)}&title=${encodeURIComponent(activity.title)}&prompt=${encodeURIComponent(activity.prompt)}`;
+      // Get user information
+      const userInfo = getUserInfo();
+      
+      // Build the Zapier chatbot URL with parameters including user info
+      let chatbotUrl = `https://interfaces.zapier.com/embed/chatbot/cmad6y3sx001ayww63u8irixx?module=${encodeURIComponent(activity.module)}&title=${encodeURIComponent(activity.title)}&prompt=${encodeURIComponent(activity.prompt)}`;
+      
+      // Add user info if available
+      if (userInfo.userName) {
+        chatbotUrl += `&userName=${encodeURIComponent(userInfo.userName)}`;
+      }
+      if (userInfo.userNumber) {
+        chatbotUrl += `&userNumber=${encodeURIComponent(userInfo.userNumber)}`;
+      }
       
       console.log('Loading chatbot with URL:', chatbotUrl);
+      console.log('User info passed:', userInfo);
       
       // Set up the iframe
       const iframe = document.getElementById('chatbot-frame');
