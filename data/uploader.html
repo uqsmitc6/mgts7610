@@ -3,48 +3,47 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Upload Zapier Export → Google Sheets</title>
+<title>Upload Zapier JSON to Google Sheets</title>
 <style>
   body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; }
-  .box { max-width: 720px; padding: 16px; border: 1px solid #ddd; border-radius: 10px; }
+  .box { max-width: 760px; padding: 16px; border: 1px solid #ddd; border-radius: 10px; }
   .row { display: flex; gap: 8px; align-items: center; }
-  input[type="text"] { width: 100%; padding: 8px; }
   input[type="file"] { padding: 8px; }
   button { padding: 8px 12px; }
-  pre { background: #f7f7f7; padding: 12px; border-radius: 8px; overflow: auto; }
+  pre { background: #f7f7f7; padding: 12px; border-radius: 8px; overflow: auto; max-height: 300px }
+  .ok { color: #116611; }
+  .err { color: #8a0000; }
 </style>
 </head>
 <body>
   <div class="box">
     <h1>Upload Zapier JSON to Google Sheets</h1>
-    <p>Paste your Apps Script Web App URL and choose a JSON export. This POSTs the file directly to your script.</p>
-    <div class="row">
-      <input id="url" type="text" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
-      <label><input id="anon" type="checkbox"> Anonymise message text</label>
-    </div>
-    <p><input id="file" type="file" accept=".json,application/json"></p>
-    <p><button id="go">Upload</button></p>
+    <p>Uploads go to:<br><code id="endpoint">https://script.google.com/macros/s/AKfycbzimEvzAtVjxjS1phjZH8QbxOAHd9TqbEk2gbox5FgZuAU4M1PDpCFluuW_1TtkpDuV/exec</code></p>
+    <p><label><input id="anon" type="checkbox"> Anonymise message text</label></p>
+    <p><input id="file" type="file" accept=".json,application/json" multiple></p>
+    <p><button id="go">Upload selected file(s)</button></p>
     <pre id="out">Ready.</pre>
   </div>
 
 <script>
+const ENDPOINT = document.getElementById('endpoint').textContent.trim();
+
 document.getElementById('go').addEventListener('click', async () => {
-  const url = document.getElementById('url').value.trim();
-  const f = document.getElementById('file').files[0];
+  const files = Array.from(document.getElementById('file').files||[]);
   const anon = document.getElementById('anon').checked ? 'true' : 'false';
   const out = document.getElementById('out');
-  if (!url || !f) { out.textContent = 'Provide URL and choose a JSON file.'; return; }
-  try {
-    const text = await f.text();
-    const res = await fetch(url + '?anonymise=' + anon, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: text
-    });
-    const data = await res.json();
-    out.textContent = JSON.stringify(data, null, 2);
-  } catch (err) {
-    out.textContent = 'Error: ' + err.message;
+  if (!files.length) { out.textContent = 'Choose one or more JSON files.'; return; }
+  out.textContent = 'Uploading…\n';
+  for (const f of files) {
+    out.textContent += '• ' + f.name + ' … ';
+    try {
+      const text = await f.text();
+      const res = await fetch(ENDPOINT + '?anonymise=' + anon, { method:'POST', body: text });
+      const data = await res.json();
+      out.textContent += 'OK\n' + JSON.stringify(data, null, 2) + '\n\n';
+    } catch (err) {
+      out.textContent += 'ERROR\n' + err.message + '\n\n';
+    }
   }
 });
 </script>
