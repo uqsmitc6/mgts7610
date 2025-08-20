@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat Visualiser (Sheets-backed)</title>
+<style>
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+  header { padding: 12px 16px; background:#121830; color:#eaf0ff; display:flex; gap:12px; align-items:center }
+  header input { padding:6px 8px; border-radius:6px; border:1px solid #2a3d88; background:#0a1130; color:#eaf0ff }
+  .app { display:grid; grid-template-columns: 320px 1fr; height: calc(100vh - 48px); }
+  aside { border-right: 1px solid #202a52; background: #121830; color:#cfd9ff }
+  .list { height: 100%; overflow:auto; padding: 10px; }
+  .item { padding: 10px; border-radius: 10px; margin-top: 8px; border: 1px solid #1b2450; cursor: pointer; background: #0b1333; color:#eaf0ff }
+  .item:hover { border-color: #2b3a88; background: #0e1742; }
+  main { overflow:auto; padding: 20px; }
+  .msg { border:1px solid #1b2450; border-radius: 10px; padding:10px; margin:10px 0; background:#0b1333; color:#eaf0ff }
+  .role { display:inline-block; font-size:11px; padding:2px 6px; border:1px solid #203074; border-radius:999px; margin-bottom:6px }
+</style>
+</head>
+<body>
+<header>
+  <b>Sheets-backed Visualiser</b>
+  <input id="q" placeholder="Search…">
+</header>
+<div class="app">
+  <aside>
+    <div class="list" id="list"></div>
+  </aside>
+  <main id="thread"><p>Set BASE_URL in the HTML to your Apps Script Web App URL, then reload.</p></main>
+</div>
+
+<script>
+// Replace this with your Apps Script Web App URL (ends with /exec)
+const BASE_URL = "https://script.google.com/macros/s/AKfycbzimEvzAtVjxjS1phjZH8QbxOAHd9TqbEk2gbox5FgZuAU4M1PDpCFluuW_1TtkpDuV/exec";
+
+const $ = (s)=>document.querySelector(s);
+const listEl = $("#list");
+const threadEl = $("#thread");
+const qEl = $("#q");
+
+let sessions = [];
+let messages = [];
+let filtered = [];
+
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function fmt(s){try{return new Date(s).toLocaleString();}catch(e){return s;}}
+
+async function loadAll(){
+  const s = await fetch(BASE_URL + "?sheet=Sessions").then(r=>r.json());
+  const m = await fetch(BASE_URL + "?sheet=Messages").then(r=>r.json());
+  sessions = s;
+  messages = m;
+  filtered = sessions;
+  renderList(filtered);
+}
+
+function renderList(items){
+  listEl.innerHTML = "";
+  for (const s of items){
+    const div = document.createElement("div");
+    div.className = "item";
+    const counts = `${s.user_msgs||0} user · ${s.assistant_msgs||0} bot`;
+    div.innerHTML = `<div><b>${escapeHtml(s.title||s.id||"Untitled")}</b></div>
+    <div style="font-size:12px;opacity:.8">${escapeHtml(fmt(s.createdAt||""))} · ${counts}</div>`;
+    div.addEventListener("click", ()=>openThread(s.id));
+    listEl.appendChild(div);
+  }
+}
+
+function openThread(id){
+  const s = sessions.find(x=>x.id===id);
+  const msgs = messages.filter(x=>x.session_id===id).sort((a,b)=>a.message_index-b.message_index);
+  threadEl.innerHTML = `<h2>${escapeHtml(s?.title||id)}</h2><div style="opacity:.7">${escapeHtml(fmt(s?.createdAt||""))}</div>`;
+  if (!msgs.length){ threadEl.innerHTML += "<p>No messages.</p>"; return; }
+  for (const m of msgs){
+    const div = document.createElement("div");
+    div.className = "msg";
+    div.innerHTML = `<div class="role">${escapeHtml(m.role||"Message")}</div><div>${escapeHtml(m.content||"")}</div>`;
+    threadEl.appendChild(div);
+  }
+}
+
+qEl.addEventListener("input", ()=>{
+  const term = qEl.value.trim().toLowerCase();
+  filtered = sessions.filter(s => JSON.stringify(s).toLowerCase().includes(term));
+  renderList(filtered);
+});
+
+if (BASE_URL.startsWith("http")) loadAll();
+</script>
+</body>
+</html>
