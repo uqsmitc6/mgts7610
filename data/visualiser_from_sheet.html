@@ -3,91 +3,682 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Chat Visualiser (Sheets-backed)</title>
+<title>Conversation Analytics Dashboard</title>
 <style>
-  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-  header { padding: 12px 16px; background:#121830; color:#eaf0ff; display:flex; gap:12px; align-items:center }
-  header input { padding:6px 8px; border-radius:6px; border:1px solid #2a3d88; background:#0a1130; color:#eaf0ff }
-  .app { display:grid; grid-template-columns: 320px 1fr; height: calc(100vh - 48px); }
-  aside { border-right: 1px solid #202a52; background: #121830; color:#cfd9ff }
-  .list { height: 100%; overflow:auto; padding: 10px; }
-  .item { padding: 10px; border-radius: 10px; margin-top: 8px; border: 1px solid #1b2450; cursor: pointer; background: #0b1333; color:#eaf0ff }
-  .item:hover { border-color: #2b3a88; background: #0e1742; }
-  main { overflow:auto; padding: 20px; }
-  .msg { border:1px solid #1b2450; border-radius: 10px; padding:10px; margin:10px 0; background:#0b1333; color:#eaf0ff }
-  .role { display:inline-block; font-size:11px; padding:2px 6px; border:1px solid #203074; border-radius:999px; margin-bottom:6px }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+  }
+  
+  .header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  
+  .header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  h1 {
+    color: #2d3748;
+    font-size: 28px;
+  }
+  
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .search-box {
+    padding: 10px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    min-width: 250px;
+    transition: border-color 0.3s;
+  }
+  
+  .search-box:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+  
+  select {
+    padding: 10px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s;
+  }
+  
+  select:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+  
+  button {
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  button:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+  
+  .dashboard {
+    max-width: 1400px;
+    margin: 20px auto;
+    padding: 0 20px;
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .stat-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+  }
+  
+  .stat-value {
+    font-size: 36px;
+    font-weight: bold;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .stat-label {
+    font-size: 14px;
+    color: #718096;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .stat-change {
+    font-size: 12px;
+    color: #48bb78;
+    margin-top: 4px;
+  }
+  
+  .main-content {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+  }
+  
+  @media (max-width: 1024px) {
+    .main-content {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .sidebar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 20px;
+    height: fit-content;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  
+  .activity-list {
+    margin-top: 16px;
+  }
+  
+  .activity-item {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: #f7fafc;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+  }
+  
+  .activity-item:hover {
+    background: #edf2f7;
+    border-color: #667eea;
+  }
+  
+  .activity-item.selected {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+  
+  .activity-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  
+  .activity-stats {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+  
+  .activity-item.selected .activity-stats {
+    opacity: 0.9;
+  }
+  
+  .conversations-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  
+  .conversation-list {
+    margin-top: 16px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  
+  .conversation-item {
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: #f7fafc;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+  }
+  
+  .conversation-item:hover {
+    background: #edf2f7;
+    border-color: #667eea;
+  }
+  
+  .conversation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 8px;
+  }
+  
+  .conversation-title {
+    font-weight: 600;
+    color: #2d3748;
+  }
+  
+  .conversation-date {
+    font-size: 12px;
+    color: #718096;
+  }
+  
+  .conversation-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #4a5568;
+  }
+  
+  .message-preview {
+    margin-top: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #4a5568;
+    max-height: 100px;
+    overflow: hidden;
+    display: none;
+  }
+  
+  .conversation-item.expanded .message-preview {
+    display: block;
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: white;
+    font-size: 18px;
+  }
+  
+  .chart-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .chart-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 16px;
+  }
+  
+  #timeline-chart {
+    height: 200px;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 40px;
+    color: #718096;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
 </style>
 </head>
 <body>
-<header>
-  <b>Sheets-backed Visualiser</b>
-  <input id="q" placeholder="Search…">
-</header>
-<div class="app">
-  <aside>
-    <div class="list" id="list"></div>
-  </aside>
-  <main id="thread"><p>Set BASE_URL in the HTML to your Apps Script Web App URL, then reload.</p></main>
-</div>
+  <div class="header">
+    <div class="header-content">
+      <h1>📊 Conversation Analytics Dashboard</h1>
+      <div class="controls">
+        <input type="text" class="search-box" id="searchInput" placeholder="Search conversations...">
+        <select id="dateFilter">
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+        <button onclick="refreshData()">🔄 Refresh</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="dashboard">
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card fade-in">
+        <div class="stat-value" id="totalSessions">-</div>
+        <div class="stat-label">Total Conversations</div>
+      </div>
+      <div class="stat-card fade-in" style="animation-delay: 0.1s">
+        <div class="stat-value" id="totalMessages">-</div>
+        <div class="stat-label">Total Messages</div>
+      </div>
+      <div class="stat-card fade-in" style="animation-delay: 0.2s">
+        <div class="stat-value" id="avgMessages">-</div>
+        <div class="stat-label">Avg Messages/Session</div>
+      </div>
+      <div class="stat-card fade-in" style="animation-delay: 0.3s">
+        <div class="stat-value" id="uniqueActivities">-</div>
+        <div class="stat-label">Active Modules</div>
+      </div>
+    </div>
+    
+    <div class="chart-container fade-in">
+      <div class="chart-title">Activity Timeline</div>
+      <canvas id="timeline-chart"></canvas>
+    </div>
+    
+    <div class="main-content">
+      <div class="sidebar fade-in">
+        <h3 style="margin-bottom: 12px; color: #2d3748;">Activities</h3>
+        <div class="activity-list" id="activityList">
+          <div class="loading">Loading activities...</div>
+        </div>
+      </div>
+      
+      <div class="conversations-panel fade-in">
+        <h3 style="margin-bottom: 12px; color: #2d3748;">Conversations</h3>
+        <div id="conversationStats" style="font-size: 14px; color: #718096; margin-bottom: 12px;"></div>
+        <div class="conversation-list" id="conversationList">
+          <div class="loading">Loading conversations...</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Replace this with your Apps Script Web App URL (ends with /exec)
-const BASE_URL = "https://script.google.com/macros/s/AKfycbzimEvzAtVjxjS1phjZH8QbxOAHd9TqbEk2gbox5FgZuAU4M1PDpCFluuW_1TtkpDuV/exec";
+// Configuration
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbzGDqn_dVpGjYBtJVnfiecgYik0AWqHsDWvF3bdc3Qj0p-HMta4hA6e18H5lnkIr_x5/exec';
 
-const $ = (s)=>document.querySelector(s);
-const listEl = $("#list");
-const threadEl = $("#thread");
-const qEl = $("#q");
-
+// Global data
 let sessions = [];
 let messages = [];
-let filtered = [];
+let filteredSessions = [];
+let selectedActivity = null;
+let timelineChart = null;
 
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function fmt(s){try{return new Date(s).toLocaleString();}catch(e){return s;}}
-
-async function loadAll(){
-  const s = await fetch(BASE_URL + "?sheet=Sessions").then(r=>r.json());
-  const m = await fetch(BASE_URL + "?sheet=Messages").then(r=>r.json());
-  sessions = s;
-  messages = m;
-  filtered = sessions;
-  renderList(filtered);
-}
-
-function renderList(items){
-  listEl.innerHTML = "";
-  for (const s of items){
-    const div = document.createElement("div");
-    div.className = "item";
-    const counts = `${s.user_msgs||0} user · ${s.assistant_msgs||0} bot`;
-    div.innerHTML = `<div><b>${escapeHtml(s.title||s.id||"Untitled")}</b></div>
-    <div style="font-size:12px;opacity:.8">${escapeHtml(fmt(s.createdAt||""))} · ${counts}</div>`;
-    div.addEventListener("click", ()=>openThread(s.id));
-    listEl.appendChild(div);
-  }
-}
-
-function openThread(id){
-  const s = sessions.find(x=>x.id===id);
-  const msgs = messages.filter(x=>x.session_id===id).sort((a,b)=>a.message_index-b.message_index);
-  threadEl.innerHTML = `<h2>${escapeHtml(s?.title||id)}</h2><div style="opacity:.7">${escapeHtml(fmt(s?.createdAt||""))}</div>`;
-  if (!msgs.length){ threadEl.innerHTML += "<p>No messages.</p>"; return; }
-  for (const m of msgs){
-    const div = document.createElement("div");
-    div.className = "msg";
-    div.innerHTML = `<div class="role">${escapeHtml(m.role||"Message")}</div><div>${escapeHtml(m.content||"")}</div>`;
-    threadEl.appendChild(div);
-  }
-}
-
-qEl.addEventListener("input", ()=>{
-  const term = qEl.value.trim().toLowerCase();
-  filtered = sessions.filter(s => JSON.stringify(s).toLowerCase().includes(term));
-  renderList(filtered);
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  initializeChart();
+  loadData();
+  setupEventListeners();
 });
 
-if (BASE_URL.startsWith("http")) loadAll();
+function setupEventListeners() {
+  document.getElementById('searchInput').addEventListener('input', filterData);
+  document.getElementById('dateFilter').addEventListener('change', filterData);
+}
+
+async function loadData() {
+  try {
+    // Load sessions
+    const sessionsResponse = await fetch(ENDPOINT + '?sheet=Sessions');
+    sessions = await sessionsResponse.json();
+    
+    // Load messages
+    const messagesResponse = await fetch(ENDPOINT + '?sheet=Messages');
+    messages = await messagesResponse.json();
+    
+    // Process and display
+    processData();
+    filterData();
+    
+  } catch (error) {
+    console.error('Error loading data:', error);
+    document.getElementById('activityList').innerHTML = '<div class="no-data">Error loading data. Please check connection.</div>';
+    document.getElementById('conversationList').innerHTML = '<div class="no-data">Error loading data. Please check connection.</div>';
+  }
+}
+
+function processData() {
+  // Calculate statistics
+  const totalSessions = sessions.length;
+  const totalMessages = messages.length;
+  const avgMessages = totalSessions > 0 ? Math.round(totalMessages / totalSessions) : 0;
+  
+  // Count unique activities
+  const activities = new Set(sessions.map(s => s.activity_id).filter(Boolean));
+  
+  // Update stats display
+  document.getElementById('totalSessions').textContent = totalSessions;
+  document.getElementById('totalMessages').textContent = totalMessages;
+  document.getElementById('avgMessages').textContent = avgMessages;
+  document.getElementById('uniqueActivities').textContent = activities.size;
+  
+  // Build activity list
+  buildActivityList();
+  
+  // Update timeline
+  updateTimeline();
+}
+
+function buildActivityList() {
+  const activityMap = {};
+  
+  // Group sessions by activity
+  sessions.forEach(session => {
+    const activityId = session.activity_id || 'unclassified';
+    const activityTitle = session.activity_title || 'Unclassified';
+    
+    if (!activityMap[activityId]) {
+      activityMap[activityId] = {
+        id: activityId,
+        title: activityTitle,
+        module: session.activity_module || '',
+        sessions: [],
+        messageCount: 0
+      };
+    }
+    
+    activityMap[activityId].sessions.push(session);
+    activityMap[activityId].messageCount += parseInt(session.messages_total) || 0;
+  });
+  
+  // Sort by session count
+  const sortedActivities = Object.values(activityMap).sort((a, b) => b.sessions.length - a.sessions.length);
+  
+  // Build HTML
+  const activityListHtml = sortedActivities.map(activity => `
+    <div class="activity-item" data-activity="${activity.id}" onclick="selectActivity('${activity.id}')">
+      <div class="activity-name">${activity.title}</div>
+      <div class="activity-stats">
+        ${activity.sessions.length} sessions · ${activity.messageCount} messages
+        ${activity.module ? `· ${activity.module}` : ''}
+      </div>
+    </div>
+  `).join('');
+  
+  document.getElementById('activityList').innerHTML = activityListHtml || '<div class="no-data">No activities found</div>';
+}
+
+function selectActivity(activityId) {
+  // Update selection state
+  document.querySelectorAll('.activity-item').forEach(item => {
+    item.classList.remove('selected');
+  });
+  
+  if (activityId && activityId !== 'all') {
+    document.querySelector(`[data-activity="${activityId}"]`)?.classList.add('selected');
+    selectedActivity = activityId;
+  } else {
+    selectedActivity = null;
+  }
+  
+  filterData();
+}
+
+function filterData() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const dateFilter = document.getElementById('dateFilter').value;
+  
+  // Start with all sessions
+  filteredSessions = [...sessions];
+  
+  // Filter by activity
+  if (selectedActivity) {
+    filteredSessions = filteredSessions.filter(s => 
+      s.activity_id === selectedActivity || 
+      (selectedActivity === 'unclassified' && !s.activity_id)
+    );
+  }
+  
+  // Filter by search term
+  if (searchTerm) {
+    filteredSessions = filteredSessions.filter(s => 
+      (s.title || '').toLowerCase().includes(searchTerm) ||
+      (s.id || '').toLowerCase().includes(searchTerm) ||
+      (s.activity_title || '').toLowerCase().includes(searchTerm)
+    );
+  }
+  
+  // Filter by date
+  if (dateFilter !== 'all') {
+    const now = new Date();
+    const cutoff = new Date();
+    
+    switch(dateFilter) {
+      case 'today':
+        cutoff.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        cutoff.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        cutoff.setMonth(now.getMonth() - 1);
+        break;
+    }
+    
+    filteredSessions = filteredSessions.filter(s => {
+      const sessionDate = new Date(s.createdAt);
+      return sessionDate >= cutoff;
+    });
+  }
+  
+  // Sort by date (newest first)
+  filteredSessions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  
+  // Update display
+  displayConversations();
+  updateConversationStats();
+}
+
+function displayConversations() {
+  if (filteredSessions.length === 0) {
+    document.getElementById('conversationList').innerHTML = '<div class="no-data">No conversations found</div>';
+    return;
+  }
+  
+  const conversationsHtml = filteredSessions.slice(0, 50).map(session => {
+    const date = new Date(session.createdAt);
+    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    
+    // Get first few messages for preview
+    const sessionMessages = messages.filter(m => m.session_id === session.id || m.session_id === session.key);
+    const preview = sessionMessages.slice(0, 2).map(m => 
+      `<div><strong>${m.role}:</strong> ${(m.content || '').substring(0, 100)}...</div>`
+    ).join('');
+    
+    return `
+      <div class="conversation-item" onclick="toggleConversation(this)">
+        <div class="conversation-header">
+          <div class="conversation-title">${session.title || session.id || 'Untitled'}</div>
+          <div class="conversation-date">${dateStr}</div>
+        </div>
+        <div class="conversation-meta">
+          <span>📝 ${session.messages_total || 0} messages</span>
+          <span>👤 ${session.user_msgs || 0} user</span>
+          <span>🤖 ${session.assistant_msgs || 0} assistant</span>
+          ${session.activity_title ? `<span>📚 ${session.activity_title}</span>` : ''}
+        </div>
+        <div class="message-preview">${preview || 'No messages'}</div>
+      </div>
+    `;
+  }).join('');
+  
+  document.getElementById('conversationList').innerHTML = conversationsHtml;
+}
+
+function toggleConversation(element) {
+  element.classList.toggle('expanded');
+}
+
+function updateConversationStats() {
+  const stats = `Showing ${Math.min(50, filteredSessions.length)} of ${filteredSessions.length} conversations`;
+  document.getElementById('conversationStats').textContent = stats;
+}
+
+function initializeChart() {
+  const ctx = document.getElementById('timeline-chart').getContext('2d');
+  timelineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: []
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom'
+        }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'day'
+          }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateTimeline() {
+  // Group sessions by date and activity
+  const timelineData = {};
+  const activities = new Set();
+  
+  sessions.forEach(session => {
+    const date = new Date(session.createdAt).toISOString().split('T')[0];
+    const activity = session.activity_title || 'Unclassified';
+    activities.add(activity);
+    
+    if (!timelineData[date]) {
+      timelineData[date] = {};
+    }
+    
+    if (!timelineData[date][activity]) {
+      timelineData[date][activity] = 0;
+    }
+    
+    timelineData[date][activity]++;
+  });
+  
+  // Prepare chart data
+  const dates = Object.keys(timelineData).sort();
+  const datasets = Array.from(activities).map((activity, index) => {
+    const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
+    const color = colors[index % colors.length];
+    
+    return {
+      label: activity,
+      data: dates.map(date => ({
+        x: date,
+        y: timelineData[date][activity] || 0
+      })),
+      borderColor: color,
+      backgroundColor: color + '20',
+      tension: 0.4
+    };
+  });
+  
+  // Update chart
+  timelineChart.data.labels = dates;
+  timelineChart.data.datasets = datasets;
+  timelineChart.update();
+}
+
+function refreshData() {
+  document.getElementById('activityList').innerHTML = '<div class="loading">Refreshing...</div>';
+  document.getElementById('conversationList').innerHTML = '<div class="loading">Refreshing...</div>';
+  loadData();
+}
 </script>
 </body>
 </html>

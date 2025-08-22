@@ -5,45 +5,366 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upload Zapier JSON to Google Sheets</title>
 <style>
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; }
-  .box { max-width: 760px; padding: 16px; border: 1px solid #ddd; border-radius: 10px; }
-  .row { display: flex; gap: 8px; align-items: center; }
-  input[type="file"] { padding: 8px; }
-  button { padding: 8px 12px; }
-  pre { background: #f7f7f7; padding: 12px; border-radius: 8px; overflow: auto; max-height: 300px }
-  .ok { color: #116611; }
-  .err { color: #8a0000; }
+  * {
+    box-sizing: border-box;
+  }
+  
+  body { 
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; 
+    margin: 0;
+    padding: 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+  }
+  
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .box { 
+    background: white;
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  }
+  
+  h1 {
+    margin: 0 0 8px 0;
+    color: #1a202c;
+    font-size: 28px;
+  }
+  
+  .subtitle {
+    color: #718096;
+    margin: 0 0 24px 0;
+  }
+  
+  .endpoint-box {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 16px 0;
+    word-break: break-all;
+  }
+  
+  .endpoint-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #718096;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  
+  #endpoint {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #2d3748;
+  }
+  
+  .controls {
+    margin: 24px 0;
+  }
+  
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    margin: 16px 0;
+  }
+  
+  .checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    cursor: pointer;
+  }
+  
+  .checkbox-group label {
+    cursor: pointer;
+    color: #4a5568;
+  }
+  
+  input[type="file"] { 
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    background: #f7fafc;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  input[type="file"]:hover {
+    border-color: #667eea;
+    background: #edf2f7;
+  }
+  
+  button { 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-top: 16px;
+  }
+  
+  button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+  
+  button:active {
+    transform: translateY(0);
+  }
+  
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .output-container {
+    margin-top: 24px;
+  }
+  
+  .output-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #718096;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  
+  pre { 
+    background: #1a202c;
+    color: #68d391;
+    padding: 16px;
+    border-radius: 8px;
+    overflow: auto;
+    max-height: 400px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0;
+  }
+  
+  .status-ready { color: #68d391; }
+  .status-uploading { color: #f6e05e; }
+  .status-success { color: #68d391; }
+  .status-error { color: #fc8181; }
+  .status-warning { color: #fbb6ce; }
 </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Upload Zapier JSON to Google Sheets</h1>
-    <p>Uploads go to:<br><code id="endpoint">https://script.google.com/macros/s/AKfycbzimEvzAtVjxjS1phjZH8QbxOAHd9TqbEk2gbox5FgZuAU4M1PDpCFluuW_1TtkpDuV/exec</code></p>
-    <p><label><input id="anon" type="checkbox"> Anonymise message text</label></p>
-    <p><input id="file" type="file" accept=".json,application/json" multiple></p>
-    <p><button id="go">Upload selected file(s)</button></p>
-    <pre id="out">Ready.</pre>
+  <div class="container">
+    <div class="box">
+      <h1>📤 Zapier → Google Sheets Uploader</h1>
+      <p class="subtitle">Upload conversation data from Zapier JSON exports to Google Sheets</p>
+      
+      <div class="endpoint-box">
+        <div class="endpoint-label">Google Apps Script Endpoint</div>
+        <code id="endpoint">https://script.google.com/macros/s/AKfycbzGDqn_dVpGjYBtJVnfiecgYik0AWqHsDWvF3bdc3Qj0p-HMta4hA6e18H5lnkIr_x5/exec</code>
+      </div>
+      
+      <div class="controls">
+        <div class="checkbox-group">
+          <input id="anon" type="checkbox">
+          <label for="anon">Anonymize message content (uses SHA-1 hashing)</label>
+        </div>
+        
+        <input id="file" type="file" accept=".json,application/json" multiple>
+        
+        <button id="uploadBtn">Upload Selected Files</button>
+      </div>
+      
+      <div class="output-container">
+        <div class="output-label">Upload Status</div>
+        <pre id="output"><span class="status-ready">✓ Ready to upload</span></pre>
+      </div>
+    </div>
   </div>
 
 <script>
-const ENDPOINT = document.getElementById('endpoint').textContent.trim();
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbzGDqn_dVpGjYBtJVnfiecgYik0AWqHsDWvF3bdc3Qj0p-HMta4hA6e18H5lnkIr_x5/exec';
 
-document.getElementById('go').addEventListener('click', async () => {
-  const files = Array.from(document.getElementById('file').files||[]);
-  const anon = document.getElementById('anon').checked ? 'true' : 'false';
-  const out = document.getElementById('out');
-  if (!files.length) { out.textContent = 'Choose one or more JSON files.'; return; }
-  out.textContent = 'Uploading…\n';
-  for (const f of files) {
-    out.textContent += '• ' + f.name + ' … ';
+// Main upload function using JSONP to bypass CORS
+async function uploadData(jsonData, anonymize) {
+  return new Promise((resolve, reject) => {
+    // Create unique callback name
+    const callbackName = 'uploadCallback' + Date.now();
+    
+    // Set up global callback
+    window[callbackName] = function(response) {
+      // Clean up
+      delete window[callbackName];
+      const scriptTag = document.getElementById('upload-script-' + callbackName);
+      if (scriptTag) scriptTag.remove();
+      
+      // Resolve with response
+      resolve(response);
+    };
+    
+    // Create script tag for JSONP
+    const script = document.createElement('script');
+    script.id = 'upload-script-' + callbackName;
+    
+    // Prepare the data
+    const encodedData = btoa(unescape(encodeURIComponent(jsonData)));
+    
+    // Build URL with parameters
+    const params = new URLSearchParams({
+      'callback': callbackName,
+      'data': encodedData,
+      'anonymise': anonymize
+    });
+    
+    script.src = ENDPOINT + '?' + params.toString();
+    
+    // Handle errors
+    script.onerror = function() {
+      delete window[callbackName];
+      script.remove();
+      reject(new Error('Failed to load script'));
+    };
+    
+    // Add script to page
+    document.body.appendChild(script);
+    
+    // Timeout after 30 seconds
+    setTimeout(() => {
+      if (window[callbackName]) {
+        delete window[callbackName];
+        const scriptTag = document.getElementById('upload-script-' + callbackName);
+        if (scriptTag) scriptTag.remove();
+        reject(new Error('Request timeout'));
+      }
+    }, 30000);
+  });
+}
+
+// Upload button handler
+document.getElementById('uploadBtn').addEventListener('click', async function() {
+  const files = document.getElementById('file').files;
+  const output = document.getElementById('output');
+  const btn = document.getElementById('uploadBtn');
+  const anonymize = document.getElementById('anon').checked ? 'true' : 'false';
+  
+  if (!files || files.length === 0) {
+    output.innerHTML = '<span class="status-error">✗ Please select one or more JSON files</span>';
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = 'Uploading...';
+  
+  let totalSessions = 0;
+  let totalMessages = 0;
+  let hasErrors = false;
+  
+  output.innerHTML = '<span class="status-uploading">⟳ Starting upload...</span>\n\n';
+  
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    output.innerHTML += `<span class="status-uploading">Processing ${file.name}...</span>\n`;
+    
     try {
-      const text = await f.text();
-      const res = await fetch(ENDPOINT + '?anonymise=' + anon, { method:'POST', body: text });
-      const data = await res.json();
-      out.textContent += 'OK\n' + JSON.stringify(data, null, 2) + '\n\n';
-    } catch (err) {
-      out.textContent += 'ERROR\n' + err.message + '\n\n';
+      // Read file
+      const text = await file.text();
+      
+      // Validate JSON
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Invalid JSON format');
+      }
+      
+      // First try regular POST
+      let success = false;
+      let data = null;
+      
+      try {
+        const response = await fetch(ENDPOINT + '?anonymise=' + anonymize, {
+          method: 'POST',
+          body: text
+        });
+        
+        if (response.ok) {
+          data = await response.json();
+          success = true;
+        }
+      } catch (e) {
+        // POST failed, try JSONP
+        output.innerHTML += `<span class="status-warning">  POST failed, trying alternative method...</span>\n`;
+        
+        try {
+          data = await uploadData(text, anonymize);
+          success = true;
+        } catch (jsonpError) {
+          throw new Error('Both upload methods failed: ' + jsonpError.message);
+        }
+      }
+      
+      if (success && data && data.ok) {
+        output.innerHTML += `<span class="status-success">✓ ${file.name} uploaded successfully!</span>\n`;
+        output.innerHTML += `  • Sessions: ${data.sessions_received} received, ${data.sessions_inserted} new\n`;
+        output.innerHTML += `  • Messages: ${data.messages_inserted} new\n\n`;
+        
+        totalSessions += data.sessions_inserted || 0;
+        totalMessages += data.messages_inserted || 0;
+      } else {
+        throw new Error(data?.error || 'Unknown error');
+      }
+      
+    } catch (error) {
+      hasErrors = true;
+      output.innerHTML += `<span class="status-error">✗ ${file.name} failed: ${error.message}</span>\n\n`;
     }
+  }
+  
+  // Final summary
+  output.innerHTML += '\n' + '='.repeat(50) + '\n';
+  if (hasErrors) {
+    output.innerHTML += '<span class="status-error">⚠ Upload completed with some errors</span>\n';
+  } else {
+    output.innerHTML += '<span class="status-success">✓ All files uploaded successfully!</span>\n';
+  }
+  
+  if (totalSessions > 0 || totalMessages > 0) {
+    output.innerHTML += `\nTotal: ${totalSessions} sessions, ${totalMessages} messages added`;
+  }
+  
+  // Reset button
+  btn.disabled = false;
+  btn.textContent = 'Upload Selected Files';
+});
+
+// File input change handler
+document.getElementById('file').addEventListener('change', function(e) {
+  const files = e.target.files;
+  const output = document.getElementById('output');
+  
+  if (files && files.length > 0) {
+    output.innerHTML = `<span class="status-ready">✓ Ready to upload ${files.length} file${files.length > 1 ? 's' : ''}</span>`;
+  }
+});
+
+// Test connection on page load
+window.addEventListener('load', async function() {
+  try {
+    const response = await fetch(ENDPOINT);
+    const data = await response.json();
+    
+    if (data.ok && data.ping) {
+      console.log('✓ Connected to Apps Script endpoint');
+    }
+  } catch (error) {
+    console.warn('Could not verify endpoint connection:', error);
   }
 });
 </script>
