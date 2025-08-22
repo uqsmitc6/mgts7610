@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Conversation Analytics - Live Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .live-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #48bb78;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #68d391;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-item label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        .control-item input, .control-item select {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+
+        .control-item input:focus, .control-item select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-refresh {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .conversation-list {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .conversation-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .conversation-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .conv-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .conv-id {
+            font-family: monospace;
+            background: #f7fafc;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+
+        .conv-activity {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .conv-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #38a169;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-group {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>📊 Student Conversation Analytics</h1>
+            <p>Real-time insights into learning conversations and student engagement</p>
+            <p style="font-size: 0.9rem; color: #667eea; margin-top: 8px;">🚀 Auto-loading from live Google Sheets data source</p>
+            <div class="live-status">
+                <div class="live-dot"></div>
+                <span>Live Dashboard</span>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="control-group">
+                <div class="control-item">
+                    <label for="googleSheetUrl">📊 Google Sheet URL (Live Data Source):</label>
+                    <input type="url" id="googleSheetUrl" readonly
+                           style="width: 400px; background: #f0f9ff; border-color: #48bb78; color: #2d3748; font-weight: 600;"
+                           title="This URL is permanently configured for your published Google Sheet">
+                </div>
+                <div class="control-item">
+                    <label for="activityFilter">🎯 Activity Filter:</label>
+                    <select id="activityFilter">
+                        <option value="">All Activities</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label for="dateFilter">📅 Date Filter:</label>
+                    <select id="dateFilter">
+                        <option value="">All Dates</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <button class="btn btn-primary" onclick="loadDataFromGoogleSheets()">🔄 Refresh Live Data</button>
+                <button class="btn btn-refresh" onclick="autoRefresh()">⚡ Auto Refresh (60s)</button>
+                <p style="margin-top: 10px; color: #48bb78; font-weight: 600;">✅ Connected to Live Google Sheets Data</p>
+            </div>
+        </div>
+
+        <div class="loading show" id="loading">
+            <div>🔄 Loading live conversation data from Google Sheets...</div>
+        </div>
+
+        <div id="dashboard-content" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalConversations">0</div>
+                    <div class="stat-label">Total Conversations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalMessages">0</div>
+                    <div class="stat-label">Total Messages</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avgMessagesPerConv">0</div>
+                    <div class="stat-label">Avg Messages/Conversation</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalActivities">0</div>
+                    <div class="stat-label">Learning Activities</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="engagementRate">0%</div>
+                    <div class="stat-label">User Engagement Rate</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">Activity Distribution</div>
+                    <canvas id="activityChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Daily Message Volume</div>
+                    <canvas id="timelineChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Conversation Length Distribution</div>
+                    <canvas id="lengthChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">User vs Assistant Messages</div>
+                    <canvas id="roleChart"></canvas>
+                </div>
+            </div>
+
+            <div class="conversation-list">
+                <div class="chart-title">Recent Conversations</div>
+                <div id="conversationsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let conversationData = [];
+        let filteredData = [];
+        let charts = {};
+        let autoRefreshInterval;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Baked-in Google Sheets URL
+            const defaultUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRm9VwLT6tXwy_THspFMEZt-E8SaPSPthSGO9yfnqEbuAsC5hwRtskM5YLpc2dRTg8S5fFppUv2H2O0/pub?output=csv';
+            
+            document.getElementById('googleSheetUrl').value = defaultUrl;
+            
+            // Auto-load data on page load
+            setTimeout(() => {
+                loadDataFromGoogleSheets();
+            }, 1000);
+        });
+
+        async function loadDataFromGoogleSheets() {
+            const url = document.getElementById('googleSheetUrl').value.trim();
+            
+            if (!url) {
+                showError('No Google Sheet URL configured');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('dashboard-content').style.display = 'none';
+
+            try {
+                // Fetch data from Google Sheets
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const csvText = await response.text();
+                
+                // Parse CSV
+                const parsed = Papa.parse(csvText, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true
+                });
+
+                if (parsed.errors.length > 0) {
+                    console.warn('CSV parsing warnings:', parsed.errors);
+                }
+
+                // Process the data
+                conversationData = processConversationData(parsed.data);
+                
+                // Update filters
+                updateFilters();
+                
+                // Apply current filters
+                applyFilters();
+                
+                // Update dashboard
+                updateDashboard();
+                
+                // Hide loading
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('dashboard-content').style.display = 'block';
+                
+                showSuccess(`Loaded ${conversationData.length} conversations successfully! Last updated: ${new Date().toLocaleTimeString()}`);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Failed to load data: ' + error.message);
+                document.getElementById('loading').classList.remove('show');
+            }
+        }
+
+        function processConversationData(rawData) {
+            // Group messages by conversation ID
+            const grouped = {};
+            
+            rawData.forEach(row => {
+                const convId = row['Conversation ID'];
+                if (!convId) return;
+                
+                if (!grouped[convId]) {
+                    grouped[convId] = [];
+                }
+                
+                grouped[convId].push({
+                    messageNumber: row['Message Number'] || 0,
+                    role: row['Role'] || 'unknown',
+                    content: row['Content'] || '',
+                    timestamp: row['Timestamp'] || '',
+                    activity: row['Activity'] || 'Unknown',
+                    importDate: row['Import Date'] || ''
+                });
+            });
+
+            // Convert to conversation objects
+            return Object.entries(grouped).map(([convId, messages]) => {
+                const sortedMessages = messages.sort((a, b) => a.messageNumber - b.messageNumber);
+                const userMessages = messages.filter(m => m.role === 'user').length;
+                const assistantMessages = messages.filter(m => m.role === 'assistant').length;
+                
+                return {
+                    id: convId,
+                    activity: messages[0]?.activity || 'Unknown',
+                    messages: sortedMessages,
+                    totalMessages: messages.length,
+                    userMessages,
+                    assistantMessages,
+                    exchanges: Math.min(userMessages, assistantMessages),
+                    startTime: messages[0]?.timestamp || '',
+                    lastMessage: sortedMessages[sortedMessages.length - 1],
+                    date: messages[0]?.timestamp ? new Date(messages[0].timestamp).toISOString().split('T')[0] : ''
+                };
+            });
+        }
+
+        function updateFilters() {
+            // Update activity filter
+            const activities = [...new Set(conversationData.map(c => c.activity))].sort();
+            const activitySelect = document.getElementById('activityFilter');
+            activitySelect.innerHTML = '<option value="">All Activities</option>';
+            activities.forEach(activity => {
+                activitySelect.innerHTML += `<option value="${activity}">${activity}</option>`;
+            });
+        }
+
+        function applyFilters() {
+            const activityFilter = document.getElementById('activityFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            filteredData = conversationData.filter(conv => {
+                // Activity filter
+                if (activityFilter && conv.activity !== activityFilter) return false;
+                
+                // Date filter
+                if (dateFilter && conv.date) {
+                    const convDate = new Date(conv.date);
+                    const now = new Date();
+                    
+                    switch (dateFilter) {
+                        case 'today':
+                            if (convDate.toDateString() !== now.toDateString()) return false;
+                            break;
+                        case 'week':
+                            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            if (convDate < weekAgo) return false;
+                            break;
+                        case 'month':
+                            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                            if (convDate < monthAgo) return false;
+                            break;
+                    }
+                }
+                
+                return true;
+            });
+        }
+
+        function updateDashboard() {
+            updateStats();
+            updateCharts();
+            updateConversationsList();
+        }
+
+        function updateStats() {
+            const totalMessages = filteredData.reduce((sum, conv) => sum + conv.totalMessages, 0);
+            const totalUserMessages = filteredData.reduce((sum, conv) => sum + conv.userMessages, 0);
+            const engagementRate = totalMessages > 0 ? (totalUserMessages / totalMessages * 100).toFixed(1) : 0;
+            const avgMessages = filteredData.length > 0 ? (totalMessages / filteredData.length).toFixed(1) : 0;
+            const activities = new Set(filteredData.map(c => c.activity)).size;
+
+            document.getElementById('totalConversations').textContent = filteredData.length;
+            document.getElementById('totalMessages').textContent = totalMessages;
+            document.getElementById('avgMessagesPerConv').textContent = avgMessages;
+            document.getElementById('totalActivities').textContent = activities;
+            document.getElementById('engagementRate').textContent = engagementRate + '%';
+        }
+
+        function updateCharts() {
+            updateActivityChart();
+            updateTimelineChart();
+            updateLengthChart();
+            updateRoleChart();
+        }
+
+        function updateActivityChart() {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            
+            if (charts.activity) {
+                charts.activity.destroy();
+            }
+
+            const activityCounts = {};
+            filteredData.forEach(conv => {
+                activityCounts[conv.activity] = (activityCounts[conv.activity] || 0) + 1;
+            });
+
+            const labels = Object.keys(activityCounts);
+            const data = Object.values(activityCounts);
+            const colors = [
+                '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
+            ];
+
+            charts.activity = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 20 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTimelineChart() {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            
+            if (charts.timeline) {
+                charts.timeline.destroy();
+            }
+
+            // Group by date
+            const dailyCounts = {};
+            filteredData.forEach(conv => {
+                if (conv.date) {
+                    dailyCounts[conv.date] = (dailyCounts[conv.date] || 0) + conv.totalMessages;
+                }
+            });
+
+            const dates = Object.keys(dailyCounts).sort();
+            const counts = dates.map(date => dailyCounts[date]);
+
+            charts.timeline = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Messages per Day',
+                        data: counts,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function updateLengthChart() {
+            const ctx = document.getElementById('lengthChart').getContext('2d');
+            
+            if (charts.length) {
+                charts.length.destroy();
+            }
+
+            // Create length bins
+            const bins = {
+                '1-3': 0,
+                '4-6': 0,
+                '7-10': 0,
+                '11-15': 0,
+                '16-20': 0,
+                '21+': 0
+            };
+
+            filteredData.forEach(conv => {
+                const len = conv.totalMessages;
+                if (len <= 3) bins['1-3']++;
+                else if (len <= 6) bins['4-6']++;
+                else if (len <= 10) bins['7-10']++;
+                else if (len <= 15) bins['11-15']++;
+                else if (len <= 20) bins['16-20']++;
+                else bins['21+']++;
+            });
+
+            charts.length = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(bins),
+                    datasets: [{
+                        label: 'Conversations',
+                        data: Object.values(bins),
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: '#667eea',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function updateRoleChart() {
+            const ctx = document.getElementById('roleChart').getContext('2d');
+            
+            if (charts.role) {
+                charts.role.destroy();
+            }
+
+            const totalUser = filteredData.reduce((sum, conv) => sum + conv.userMessages, 0);
+            const totalAssistant = filteredData.reduce((sum, conv) => sum + conv.assistantMessages, 0);
+
+            charts.role = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['User Messages', 'Assistant Messages'],
+                    datasets: [{
+                        data: [totalUser, totalAssistant],
+                        backgroundColor: ['#48bb78', '#667eea'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 20 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateConversationsList() {
+            const container = document.getElementById('conversationsList');
+            const recent = filteredData.slice(0, 20); // Show latest 20
+
+            container.innerHTML = recent.map(conv => `
+                <div class="conversation-item" onclick="showConversationDetails('${conv.id}')">
+                    <div class="conv-header">
+                        <div class="conv-id">${conv.id.substring(0, 12)}...</div>
+                        <div class="conv-activity">${conv.activity}</div>
+                    </div>
+                    <div class="conv-stats">
+                        <span>📅 ${conv.date}</span>
+                        <span>💬 ${conv.totalMessages} messages</span>
+                        <span>🔄 ${conv.exchanges} exchanges</span>
+                        <span>👤 ${conv.userMessages} user</span>
+                        <span>🤖 ${conv.assistantMessages} assistant</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showConversationDetails(convId) {
+            const conv = conversationData.find(c => c.id === convId);
+            if (!conv) return;
+
+            alert(`Conversation Details:\n\nID: ${conv.id}\nActivity: ${conv.activity}\nTotal Messages: ${conv.totalMessages}\nExchanges: ${conv.exchanges}\n\nFirst Message:\n${conv.messages[0]?.content.substring(0, 200)}...`);
+        }
+
+        function autoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                showSuccess('Auto-refresh disabled');
+                return;
+            }
+
+            autoRefreshInterval = setInterval(() => {
+                loadDataFromGoogleSheets();
+            }, 60000); // Refresh every 60 seconds
+
+            showSuccess('Auto-refresh enabled (60 seconds)');
+        }
+
+        function showError(message) {
+            const existing = document.querySelector('.error-message');
+            if (existing) existing.remove();
+
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = '❌ ' + message;
+            document.querySelector('.dashboard-container').insertBefore(errorDiv, document.querySelector('.controls-panel').nextSibling);
+
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function showSuccess(message) {
+            const existing = document.querySelector('.success-message');
+            if (existing) existing.remove();
+
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = '✅ ' + message;
+            document.querySelector('.dashboard-container').insertBefore(successDiv, document.querySelector('.controls-panel').nextSibling);
+
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        // Add event listeners for filters
+        document.getElementById('activityFilter').addEventListener('change', () => {
+            applyFilters();
+            updateDashboard();
+        });
+
+        document.getElementById('dateFilter').addEventListener('change', () => {
+            applyFilters();
+            updateDashboard();
+        });
+    </script>
+</body>
+</html>
