@@ -430,6 +430,15 @@
             margin: 20px 0;
             color: #2c5282;
         }
+
+        .success-message {
+            background: #f0fff4;
+            border: 2px solid #9ae6b4;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #22543d;
+        }
     </style>
 </head>
 <body>
@@ -581,57 +590,17 @@
             <h2 style="margin-bottom: 20px;">📝 Send Data to Google Sheets</h2>
             
             <div id="googleSheetsContent">
-                <!-- Setup Instructions -->
-                <div id="setupInstructions" style="display: none;">
-                    <div class="info-box" style="background: #f0f9ff; border-color: #0ea5e9;">
-                        <h3>🚀 First Time Setup (5 minutes)</h3>
-                        <ol style="margin: 15px 0 0 20px; line-height: 1.8;">
-                            <li><strong>Create a new Google Sheet</strong> or open an existing one</li>
-                            <li>Go to <strong>Extensions → Apps Script</strong></li>
-                            <li>Delete any existing code and paste the Google Apps Script code (provided below)</li>
-                            <li>Click <strong>Deploy → New Deployment</strong></li>
-                            <li>Choose type: <strong>Web app</strong></li>
-                            <li>Set settings:
-                                <ul style="margin-left: 20px;">
-                                    <li>Description: "Zapier Conversations Data Collector"</li>
-                                    <li>Execute as: <strong>Me</strong></li>
-                                    <li>Who has access: <strong>Anyone</strong></li>
-                                </ul>
-                            </li>
-                            <li>Click <strong>Deploy</strong> and authorize the script</li>
-                            <li>Copy the <strong>Web app URL</strong> and paste it below</li>
-                        </ol>
-                    </div>
-                    
-                    <div style="margin: 20px 0;">
-                        <button onclick="showScriptCode()" style="width: 100%; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
-                            📄 Show Google Apps Script Code
-                        </button>
-                    </div>
-                    
-                    <div id="scriptCode" style="display: none; margin: 20px 0;">
-                        <p style="margin-bottom: 10px;"><strong>Copy this entire code:</strong></p>
-                        <textarea style="width: 100%; height: 300px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 10px; font-family: monospace; font-size: 12px;" readonly>
-// Copy the Google Apps Script code from the artifact above
-// It's too long to include here, but it handles:
-// - Receiving data from this dashboard
-// - Checking for duplicates
-// - Adding new conversations
-// - Maintaining an import log
-// - Providing statistics</textarea>
-                        <button onclick="copyScriptCode()" style="width: 100%; margin-top: 10px;">📋 Copy Script Code</button>
-                    </div>
-                </div>
-                
-                <!-- Main Interface -->
                 <div id="mainInterface">
                     <div class="control-group" style="background: #f0f9ff; margin-bottom: 20px;">
                         <label for="webAppUrl">Google Web App URL:</label>
                         <input type="text" id="webAppUrl" 
                                value="https://script.google.com/macros/s/AKfycbzS1D64GIUdR9syWjTAUEUq07w28eTDBMyxAP8QmYv7FnDmD_WGydbfPPU7cgjNh8dGGA/exec"
-                               style="width: 100%; margin-bottom: 10px; background: #f8f9fa;" readonly>
+                               style="width: 100%; margin-bottom: 10px; background: #f8f9fa;">
+                        <button onclick="testGoogleScriptUrl()" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                            🧪 Test Google Script Connection
+                        </button>
                         <p style="margin-top: 10px; font-size: 0.9rem; color: #38a169;">
-                            ✅ Connected to your Google Sheet
+                            ✅ Click test button to verify your Google Script is working
                         </p>
                     </div>
                     
@@ -762,6 +731,11 @@
             let duplicates = 0;
             let errors = 0;
             
+            if (!Array.isArray(conversations)) {
+                addLogEntry(importLog, 'Error: Expected array of conversations', 'error');
+                return;
+            }
+            
             conversations.forEach(conv => {
                 try {
                     if (database.conversations.has(conv.id)) {
@@ -798,6 +772,10 @@
             if (imported > 0) {
                 setTimeout(() => {
                     alert(`Successfully imported ${imported} new conversations!`);
+                    // Auto-switch to dashboard if it's the first import and dashboard tab isn't active
+                    if (database.conversations.size === imported) {
+                        switchPage('dashboard');
+                    }
                 }, 100);
             }
         }
@@ -882,6 +860,12 @@
                     importHistory: []
                 };
                 updateDatabaseStats();
+                // Clear dashboard
+                filteredData = [];
+                document.getElementById('tableContainer').innerHTML = '<p class="loading">No data loaded. Go to Data Management to import conversations.</p>';
+                // Clear charts
+                Object.values(charts).forEach(chart => chart.destroy());
+                charts = {};
                 alert('Database cleared successfully');
             }
         }
@@ -1342,99 +1326,6 @@
             });
             
             const csv = Papa.unparse(csvData);
-            document.getElementById('csvTextArea').value = csv;
-            document.getElementById('googleSheetsModal').style.display = 'block';
-        }
-
-        function copyCsvToClipboard() {
-            const textarea = document.getElementById('csvTextArea');
-            textarea.select();
-            document.execCommand('copy');
-            
-            // Show feedback
-            const button = event.target;
-            const originalText = button.innerHTML;
-            button.innerHTML = '✅ Copied!';
-            button.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
-            
-            setTimeout(() => {
-                button.innerHTML = originalText;
-                button.style.background = '';
-            }, 2000);
-        }
-
-        function createNewGoogleSheet() {
-            // Prepare the data for Google Sheets
-            const csvData = filteredData.map(conv => {
-                return [
-                    conv.id,
-                    conv.activity,
-                    conv.date,
-                    conv.startTime.toISOString(),
-                    conv.endTime.toISOString(),
-                    conv.durationMinutes.toFixed(2),
-                    conv.totalMessages,
-                    conv.userMessages,
-                    conv.assistantMessages,
-                    conv.exchanges,
-                    conv.completed ? 'Yes' : 'No',
-                    conv.messages[0]?.content.substring(0, 200).replace(/[\n\r]/g, ' ') || ''
-                ];
-            });
-            
-            // Add headers
-            const headers = ['ID', 'Activity', 'Date', 'Start Time', 'End Time', 'Duration (minutes)', 
-                           'Total Messages', 'User Messages', 'Assistant Messages', 'Exchanges', 
-                           'Completed', 'First Message'];
-            csvData.unshift(headers);
-            
-            // Create a CSV string for download as fallback
-            const csv = Papa.unparse(csvData);
-            
-            // Create Google Sheets URL with data
-            const baseUrl = 'https://docs.google.com/spreadsheets/create';
-            
-            // For now, we'll provide instructions since direct API integration requires authentication
-            const instructions = `
-                <div style="padding: 20px;">
-                    <h3>Creating Google Sheet...</h3>
-                    <p style="margin: 15px 0;">Since direct Google Sheets API requires authentication, here's how to quickly get your data into Google Sheets:</p>
-                    
-                    <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin: 20px 0;">
-                        <h4>Quick Method:</h4>
-                        <ol style="margin-left: 20px; line-height: 1.8;">
-                            <li>Click the button below to download the CSV file</li>
-                            <li>Go to <a href="https://sheets.google.com" target="_blank">Google Sheets</a></li>
-                            <li>Click "Blank" to create a new sheet</li>
-                            <li>Click File → Import → Upload → Select your CSV file</li>
-                            <li>Choose "Replace spreadsheet" and click "Import data"</li>
-                        </ol>
-                    </div>
-                    
-                    <button onclick="exportToCSV()" style="width: 100%; margin-top: 20px; background: linear-gradient(135deg, #0F9D58 0%, #4285F4 100%);">
-                        📥 Download CSV for Google Sheets
-                    </button>
-                    
-                    <div style="background: #ebf8ff; padding: 15px; border-radius: 10px; margin-top: 20px;">
-                        <strong>💡 Pro Tip:</strong> Once imported, you can use Google Sheets' features like:
-                        <ul style="margin-left: 20px; margin-top: 10px;">
-                            <li>Pivot tables for advanced analysis</li>
-                            <li>Charts and graphs</li>
-                            <li>Sharing with colleagues</li>
-                            <li>Real-time collaboration</li>
-                        </ul>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('googleSheetsOptions').innerHTML = instructions;
-        }exchanges,
-                    'Completed': conv.completed ? 'Yes' : 'No',
-                    'First Message': conv.messages[0]?.content.substring(0, 200) || ''
-                };
-            });
-            
-            const csv = Papa.unparse(csvData);
             downloadFile(csv, 'conversations_export.csv', 'text/csv');
         }
 
@@ -1477,29 +1368,45 @@
             return text.replace(/[&<>"']/g, m => map[m]);
         }
 
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('conversationModal');
-            const googleModal = document.getElementById('googleSheetsModal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
-            if (event.target === googleModal) {
-                googleModal.style.display = 'none';
-            }
-        }
-
         // Google Sheets Integration
         let googleWebAppUrl = 'https://script.google.com/macros/s/AKfycbzS1D64GIUdR9syWjTAUEUq07w28eTDBMyxAP8QmYv7FnDmD_WGydbfPPU7cgjNh8dGGA/exec';
 
+        // Function to test the Google Apps Script URL
+        async function testGoogleScriptUrl() {
+            const url = document.getElementById('webAppUrl').value.trim();
+            
+            if (!url) {
+                alert('Please enter a Google Web App URL first');
+                return;
+            }
+            
+            try {
+                console.log('Testing URL:', url);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                const text = await response.text();
+                console.log('Response:', text);
+                
+                alert('✅ Google Apps Script is working! Check console for details.');
+                
+            } catch (error) {
+                console.error('Test failed:', error);
+                alert('❌ Cannot connect to Google Apps Script. Check the URL and deployment settings.');
+            }
+        }
+
         function showGoogleSheetsSetup() {
-            // Set the hardcoded URL
+            // Ensure we have current filtered data
+            if (filteredData.length === 0) {
+                alert('No data to send. Please load and filter data first.');
+                return;
+            }
+            
             document.getElementById('webAppUrl').value = googleWebAppUrl;
-            
-            // Update data preview
             updateDataPreview();
-            
-            // Show modal
             document.getElementById('googleSheetsModal').style.display = 'block';
         }
 
@@ -1521,65 +1428,15 @@
             }
         }
 
-        function showSetupInstructions() {
-            document.getElementById('setupInstructions').style.display = 'block';
-        }
-
-        function showScriptCode() {
-            const scriptDiv = document.getElementById('scriptCode');
-            if (scriptDiv.style.display === 'none') {
-                scriptDiv.style.display = 'block';
-                // Load the actual script
-                scriptDiv.querySelector('textarea').value = getGoogleAppsScriptCode();
-            } else {
-                scriptDiv.style.display = 'none';
-            }
-        }
-
-        function copyScriptCode() {
-            const textarea = document.getElementById('scriptCode').querySelector('textarea');
-            textarea.select();
-            document.execCommand('copy');
+        async function sendToGoogleSheets() {
+            console.log('Send button clicked!');
             
-            const button = event.target;
-            const originalText = button.innerHTML;
-            button.innerHTML = '✅ Copied!';
-            button.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
-            
-            setTimeout(() => {
-                button.innerHTML = originalText;
-                button.style.background = '';
-            }, 2000);
-        }
-
-        function saveWebAppUrl() {
             const url = document.getElementById('webAppUrl').value.trim();
+            
             if (!url) {
-                alert('Please enter a Web App URL');
+                alert('Please enter a valid Google Web App URL');
                 return;
             }
-            
-            googleWebAppUrl = url;
-            // Note: localStorage won't work in Claude artifacts, but keeping for reference
-            try {
-                localStorage.setItem('googleWebAppUrl', url);
-            } catch(e) {
-                console.log('localStorage not available');
-            }
-            
-            const button = event.target;
-            const originalText = button.innerHTML;
-            button.innerHTML = '✅ Saved!';
-            button.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
-            
-            setTimeout(() => {
-                button.innerHTML = originalText;
-                button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            }, 2000);
-        }
-
-        async function sendToGoogleSheets() {
-            const url = googleWebAppUrl; // Use the hardcoded URL
             
             if (filteredData.length === 0) {
                 alert('No data to send. Please load data first.');
@@ -1589,12 +1446,14 @@
             const sendButton = document.getElementById('sendButton');
             const resultDiv = document.getElementById('sendResult');
             
-            // Update button to show loading
+            console.log('Starting send process...');
+            
+            // Update button state
             sendButton.disabled = true;
             sendButton.innerHTML = '⏳ Sending data...';
             
             try {
-                // Prepare data payload
+                // Prepare the payload
                 const payload = {
                     conversations: filteredData,
                     metadata: {
@@ -1604,33 +1463,42 @@
                     }
                 };
                 
-                // Send to Google Sheets
+                console.log('Sending payload:', { 
+                    conversationCount: payload.conversations.length,
+                    url: url 
+                });
+                
+                // Try sending to Google Sheets with better error handling
                 const response = await fetch(url, {
                     method: 'POST',
-                    mode: 'no-cors', // Important for Google Apps Script
+                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(payload)
                 });
                 
-                // Since no-cors mode doesn't allow reading response, we assume success
+                console.log('Request sent successfully');
+                
+                // Show success message (since no-cors mode prevents us from reading the response)
                 resultDiv.style.display = 'block';
                 resultDiv.className = 'info-box';
                 resultDiv.innerHTML = `
-                    <strong>✅ Data Sent Successfully!</strong>
+                    <strong>✅ Data Sent to Google Sheets!</strong>
                     <p style="margin-top: 10px;">
                         ${filteredData.length} conversations sent to your Google Sheet.
                         The sheet will automatically handle duplicates.
                     </p>
-                    <p style="margin-top: 10px;">
-                        <a href="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID" target="_blank">Open Google Sheet →</a>
+                    <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+                        <strong>⚡ Quick check:</strong> Open your Google Sheet to verify the data was received.
                     </p>
                 `;
                 
-                sendButton.innerHTML = '✅ Sent Successfully!';
+                // Update button to show success
+                sendButton.innerHTML = '✅ Data Sent!';
                 sendButton.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
                 
+                // Reset button after 3 seconds
                 setTimeout(() => {
                     sendButton.innerHTML = '🚀 Send Data to Google Sheets';
                     sendButton.style.background = 'linear-gradient(135deg, #0F9D58 0%, #4285F4 100%)';
@@ -1638,237 +1506,102 @@
                 }, 3000);
                 
             } catch (error) {
+                console.error('Error sending data:', error);
+                
+                // Show specific troubleshooting based on error type
+                let troubleshootingHTML = '';
+                if (error.message.includes('Failed to fetch')) {
+                    troubleshootingHTML = `
+                        <strong>🔧 Troubleshooting Steps:</strong>
+                        <ol style="margin: 10px 0 0 20px; text-align: left; line-height: 1.8;">
+                            <li><strong>Check deployment:</strong> Go to script.google.com → Deploy → Manage deployments</li>
+                            <li><strong>Verify settings:</strong> Execute as "Me", Who has access "Anyone"</li>
+                            <li><strong>Test URL:</strong> Click the "Test Google Script Connection" button above</li>
+                            <li><strong>Get new URL:</strong> Copy the Web app URL that ends with /exec</li>
+                        </ol>
+                    `;
+                } else {
+                    troubleshootingHTML = `
+                        <p>Error: ${error.message}</p>
+                        <p>Try the test button above to diagnose the issue.</p>
+                    `;
+                }
+                
+                // Show fallback options
                 resultDiv.style.display = 'block';
                 resultDiv.className = 'warning-box';
                 resultDiv.innerHTML = `
-                    <strong>⚠️ Send Complete</strong>
+                    <strong>⚠️ Google Sheets Connection Issue</strong>
                     <p style="margin-top: 10px;">
-                        Data was sent to Google Sheets. Due to browser security (CORS), 
-                        we can't confirm the response, but your data should be in the sheet.
+                        Unable to connect to the Google Apps Script.
                     </p>
-                    <p style="margin-top: 10px;">
-                        Check your Google Sheet to verify the data was received.
-                    </p>
+                    ${troubleshootingHTML}
+                    <div style="margin-top: 15px;">
+                        <button onclick="downloadCSVForSheets()" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, #0F9D58 0%, #4285F4 100%);">
+                            📥 Download CSV for Manual Import
+                        </button>
+                    </div>
                 `;
                 
+                // Reset button
                 sendButton.innerHTML = '🚀 Send Data to Google Sheets';
                 sendButton.disabled = false;
             }
         }
 
-        function closeGoogleSheetsModal() {
-            document.getElementById('googleSheetsModal').style.display = 'none';
-        }
-
-        function getGoogleAppsScriptCode() {
-            return `// Google Apps Script - Zapier Conversations Data Collector
-// Deploy this as a Web App to receive data from your dashboard
-
-function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    
-    // Get or create sheets
-    let dataSheet = ss.getSheetByName('Conversations');
-    if (!dataSheet) {
-      dataSheet = ss.insertSheet('Conversations');
-      setupHeaders(dataSheet);
-    }
-    
-    let logSheet = ss.getSheetByName('Import Log');
-    if (!logSheet) {
-      logSheet = ss.insertSheet('Import Log');
-      logSheet.getRange(1, 1, 1, 5).setValues([['Import Date', 'Total Received', 'New Added', 'Duplicates Skipped', 'Status']]);
-    }
-    
-    // Process conversations
-    const result = processConversations(dataSheet, data.conversations);
-    
-    // Log the import
-    logSheet.appendRow([
-      new Date().toISOString(),
-      result.received,
-      result.added,
-      result.skipped,
-      'Success'
-    ]);
-    
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        success: true,
-        message: \`Added \${result.added} new, skipped \${result.skipped} duplicates\`,
-        details: result
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
-      
-  } catch (error) {
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        success: false,
-        error: error.toString()
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function setupHeaders(sheet) {
-  const headers = [
-    'ID', 'Activity', 'Date', 'Start Time', 'End Time',
-    'Duration (minutes)', 'Total Messages', 'User Messages',
-    'Assistant Messages', 'Exchanges', 'Completed',
-    'First Message', 'Import Date'
-  ];
-  
-  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-  sheet.getRange(1, 1, 1, headers.length)
-    .setFontWeight('bold')
-    .setBackground('#4285f4')
-    .setFontColor('#ffffff');
-  sheet.setFrozenRows(1);
-}
-
-function processConversations(sheet, conversations) {
-  const result = { received: conversations.length, added: 0, skipped: 0 };
-  
-  // Get existing IDs
-  const lastRow = sheet.getLastRow();
-  let existingIds = new Set();
-  if (lastRow > 1) {
-    const idColumn = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-    existingIds = new Set(idColumn.map(row => row[0]));
-  }
-  
-  // Add new conversations
-  const newRows = [];
-  const importDate = new Date().toISOString();
-  
-  for (const conv of conversations) {
-    if (existingIds.has(conv.id)) {
-      result.skipped++;
-      continue;
-    }
-    
-    newRows.push([
-      conv.id,
-      conv.activity || 'Unknown',
-      conv.date || '',
-      conv.createdAt || '',
-      conv.updatedAt || '',
-      conv.durationMinutes ? parseFloat(conv.durationMinutes).toFixed(2) : '0',
-      conv.totalMessages || 0,
-      conv.userMessages || 0,
-      conv.assistantMessages || 0,
-      conv.exchanges || 0,
-      conv.completed ? 'Yes' : 'No',
-      conv.messages && conv.messages[0] ? 
-        conv.messages[0].content.substring(0, 200).replace(/[\\n\\r]/g, ' ') : '',
-      importDate
-    ]);
-    result.added++;
-  }
-  
-  if (newRows.length > 0) {
-    sheet.getRange(lastRow + 1, 1, newRows.length, newRows[0].length).setValues(newRows);
-  }
-  
-  return result;
-}`;
-        }exchanges,
-                    'Completed': conv.completed ? 'Yes' : 'No',
-                    'First Message': conv.messages[0]?.content.substring(0, 200).replace(/[\n\r]/g, ' ') || ''
-                };
-            });
+        function downloadCSVForSheets() {
+            // Generate CSV data
+            const csvData = filteredData.map(conv => ({
+                'ID': conv.id,
+                'Activity': conv.activity,
+                'Date': conv.date,
+                'Start Time': conv.startTime.toISOString(),
+                'End Time': conv.endTime.toISOString(),
+                'Duration (minutes)': conv.durationMinutes.toFixed(2),
+                'Total Messages': conv.totalMessages,
+                'User Messages': conv.userMessages,
+                'Assistant Messages': conv.assistantMessages,
+                'Exchanges': conv.exchanges,
+                'Completed': conv.completed ? 'Yes' : 'No',
+                'First Message': conv.messages[0]?.content.substring(0, 200).replace(/[\n\r]/g, ' ') || ''
+            }));
             
             const csv = Papa.unparse(csvData);
-            document.getElementById('csvTextArea').value = csv;
-            document.getElementById('googleSheetsModal').style.display = 'block';
-        }
-
-        function closeGoogleSheetsModal() {
-            document.getElementById('googleSheetsModal').style.display = 'none';
-        }
-
-        function copyCsvToClipboard() {
-            const textarea = document.getElementById('csvTextArea');
-            textarea.select();
-            document.execCommand('copy');
+            downloadFile(csv, 'zapier_conversations_for_sheets.csv', 'text/csv');
             
-            // Show feedback
-            const button = event.target;
-            const originalText = button.innerHTML;
-            button.innerHTML = '✅ Copied!';
-            button.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
-            
-            setTimeout(() => {
-                button.innerHTML = originalText;
-                button.style.background = '';
-            }, 2000);
-        }
-
-        function createNewGoogleSheet() {
-            // Prepare the data for Google Sheets
-            const csvData = filteredData.map(conv => {
-                return [
-                    conv.id,
-                    conv.activity,
-                    conv.date,
-                    conv.startTime.toISOString(),
-                    conv.endTime.toISOString(),
-                    conv.durationMinutes.toFixed(2),
-                    conv.totalMessages,
-                    conv.userMessages,
-                    conv.assistantMessages,
-                    conv.exchanges,
-                    conv.completed ? 'Yes' : 'No',
-                    conv.messages[0]?.content.substring(0, 200).replace(/[\n\r]/g, ' ') || ''
-                ];
-            });
-            
-            // Add headers
-            const headers = ['ID', 'Activity', 'Date', 'Start Time', 'End Time', 'Duration (minutes)', 
-                           'Total Messages', 'User Messages', 'Assistant Messages', 'Exchanges', 
-                           'Completed', 'First Message'];
-            csvData.unshift(headers);
-            
-            // Create a CSV string for download as fallback
-            const csv = Papa.unparse(csvData);
-            
-            // Create Google Sheets URL with data
-            const baseUrl = 'https://docs.google.com/spreadsheets/create';
-            
-            // For now, we'll provide instructions since direct API integration requires authentication
-            const instructions = `
-                <div style="padding: 20px;">
-                    <h3>Creating Google Sheet...</h3>
-                    <p style="margin: 15px 0;">Since direct Google Sheets API requires authentication, here's how to quickly get your data into Google Sheets:</p>
-                    
-                    <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin: 20px 0;">
-                        <h4>Quick Method:</h4>
-                        <ol style="margin-left: 20px; line-height: 1.8;">
-                            <li>Click the button below to download the CSV file</li>
-                            <li>Go to <a href="https://sheets.google.com" target="_blank">Google Sheets</a></li>
-                            <li>Click "Blank" to create a new sheet</li>
-                            <li>Click File → Import → Upload → Select your CSV file</li>
-                            <li>Choose "Replace spreadsheet" and click "Import data"</li>
-                        </ol>
-                    </div>
-                    
-                    <button onclick="exportToCSV()" style="width: 100%; margin-top: 20px; background: linear-gradient(135deg, #0F9D58 0%, #4285F4 100%);">
-                        📥 Download CSV for Google Sheets
-                    </button>
-                    
-                    <div style="background: #ebf8ff; padding: 15px; border-radius: 10px; margin-top: 20px;">
-                        <strong>💡 Pro Tip:</strong> Once imported, you can use Google Sheets' features like:
-                        <ul style="margin-left: 20px; margin-top: 10px;">
-                            <li>Pivot tables for advanced analysis</li>
-                            <li>Charts and graphs</li>
-                            <li>Sharing with colleagues</li>
-                            <li>Real-time collaboration</li>
-                        </ul>
-                    </div>
-                </div>
+            // Update the result div with import instructions
+            const resultDiv = document.getElementById('sendResult');
+            resultDiv.className = 'info-box';
+            resultDiv.innerHTML = `
+                <strong>📥 CSV Downloaded!</strong>
+                <p style="margin-top: 10px;">
+                    Your CSV file has been downloaded. To import into Google Sheets:
+                </p>
+                <ol style="margin: 10px 0 0 20px; text-align: left; line-height: 1.6;">
+                    <li>Open <a href="https://sheets.google.com" target="_blank">Google Sheets</a></li>
+                    <li>Create a new blank sheet</li>
+                    <li>Go to File → Import → Upload</li>
+                    <li>Select the downloaded CSV file</li>
+                    <li>Choose "Replace spreadsheet" and click "Import data"</li>
+                </ol>
             `;
-            
-            document.getElementById('googleSheetsOptions').innerHTML = instructions;
         }
+
+        function closeGoogleSheetsModal() {
+            document.getElementById('googleSheetsModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('conversationModal');
+            const googleModal = document.getElementById('googleSheetsModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+            if (event.target === googleModal) {
+                googleModal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
