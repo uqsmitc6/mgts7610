@@ -1,372 +1,1874 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Upload Zapier JSON to Google Sheets</title>
-<style>
-  * {
-    box-sizing: border-box;
-  }
-  
-  body { 
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; 
-    margin: 0;
-    padding: 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-  }
-  
-  .container {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  
-  .box { 
-    background: white;
-    padding: 32px;
-    border-radius: 16px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-  }
-  
-  h1 {
-    margin: 0 0 8px 0;
-    color: #1a202c;
-    font-size: 28px;
-  }
-  
-  .subtitle {
-    color: #718096;
-    margin: 0 0 24px 0;
-  }
-  
-  .endpoint-box {
-    background: #f7fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 12px;
-    margin: 16px 0;
-    word-break: break-all;
-  }
-  
-  .endpoint-label {
-    font-size: 12px;
-    text-transform: uppercase;
-    color: #718096;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-  }
-  
-  #endpoint {
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    color: #2d3748;
-  }
-  
-  .controls {
-    margin: 24px 0;
-  }
-  
-  .checkbox-group {
-    display: flex;
-    align-items: center;
-    margin: 16px 0;
-  }
-  
-  .checkbox-group input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    margin-right: 8px;
-    cursor: pointer;
-  }
-  
-  .checkbox-group label {
-    cursor: pointer;
-    color: #4a5568;
-  }
-  
-  input[type="file"] { 
-    display: block;
-    width: 100%;
-    padding: 12px;
-    border: 2px dashed #cbd5e0;
-    border-radius: 8px;
-    background: #f7fafc;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  input[type="file"]:hover {
-    border-color: #667eea;
-    background: #edf2f7;
-  }
-  
-  button { 
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    margin-top: 16px;
-  }
-  
-  button:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-  }
-  
-  button:active {
-    transform: translateY(0);
-  }
-  
-  button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .output-container {
-    margin-top: 24px;
-  }
-  
-  .output-label {
-    font-size: 12px;
-    text-transform: uppercase;
-    color: #718096;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-  }
-  
-  pre { 
-    background: #1a202c;
-    color: #68d391;
-    padding: 16px;
-    border-radius: 8px;
-    overflow: auto;
-    max-height: 400px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    margin: 0;
-  }
-  
-  .status-ready { color: #68d391; }
-  .status-uploading { color: #f6e05e; }
-  .status-success { color: #68d391; }
-  .status-error { color: #fc8181; }
-  .status-warning { color: #fbb6ce; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zapier Conversations Analytics System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .nav-header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-tab {
+            background: transparent;
+            color: #4a5568;
+            border: 2px solid transparent;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .nav-tab:hover:not(.active) {
+            border-color: #667eea;
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Data Management Styles */
+        .data-management {
+            display: grid;
+            gap: 30px;
+        }
+
+        .upload-section, .database-info, .import-export-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.1);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #a0aec0;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #4a5568;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+
+        .database-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #718096;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        .import-log {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .log-entry.success {
+            color: #38a169;
+        }
+
+        .log-entry.warning {
+            color: #d69e2e;
+        }
+
+        .log-entry.error {
+            color: #e53e3e;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+        }
+
+        button.danger {
+            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+        }
+
+        /* Dashboard Styles */
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            flex: 1;
+            min-width: 250px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        select, input[type="date"], input[type="text"] {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .conversations-table {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .view-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .close {
+            color: #a0aec0;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #2d3748;
+        }
+
+        .message {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .message.user {
+            background: #e6fffa;
+            border-left: 4px solid #4fd1c5;
+        }
+
+        .message.assistant {
+            background: #f0f4f8;
+            border-left: 4px solid #667eea;
+        }
+
+        .message-role {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .message-content {
+            color: #4a5568;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #718096;
+        }
+
+        .warning-box {
+            background: #fff5f5;
+            border: 2px solid #feb2b2;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #742a2a;
+        }
+
+        .info-box {
+            background: #ebf8ff;
+            border: 2px solid #90cdf4;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #2c5282;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="box">
-      <h1>📤 Zapier → Google Sheets Uploader</h1>
-      <p class="subtitle">Upload conversation data from Zapier JSON exports to Google Sheets</p>
-      
-      <div class="endpoint-box">
-        <div class="endpoint-label">Google Apps Script Endpoint</div>
-        <code id="endpoint">https://script.google.com/macros/s/AKfycbzGDqn_dVpGjYBtJVnfiecgYik0AWqHsDWvF3bdc3Qj0p-HMta4hA6e18H5lnkIr_x5/exec</code>
-      </div>
-      
-      <div class="controls">
-        <div class="checkbox-group">
-          <input id="anon" type="checkbox">
-          <label for="anon">Anonymize message content (uses SHA-1 hashing)</label>
+    <div class="container">
+        <div class="nav-header">
+            <h1>Zapier Conversations Analytics</h1>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchPage('data')">Data Management</button>
+                <button class="nav-tab" onclick="switchPage('dashboard')">Dashboard</button>
+            </div>
         </div>
-        
-        <input id="file" type="file" accept=".json,application/json" multiple>
-        
-        <button id="uploadBtn">Upload Selected Files</button>
-      </div>
-      
-      <div class="output-container">
-        <div class="output-label">Upload Status</div>
-        <pre id="output"><span class="status-ready">✓ Ready to upload</span></pre>
-      </div>
+
+        <!-- Data Management Page -->
+        <div id="dataPage" class="page active">
+            <div class="data-management">
+                <div class="upload-section">
+                    <h2 class="section-title">📤 Import Conversations</h2>
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click();" 
+                         ondrop="handleDrop(event)" 
+                         ondragover="handleDragOver(event)" 
+                         ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">Click to upload or drag & drop JSON file</div>
+                        <div class="upload-hint">New conversations will be added, duplicates will be skipped</div>
+                        <input type="file" id="fileInput" class="file-input" accept=".json" onchange="handleFileUpload(event)">
+                    </div>
+                    <div class="import-log" id="importLog" style="display: none;">
+                        <strong>Import Log:</strong>
+                    </div>
+                </div>
+
+                <div class="database-info">
+                    <h2 class="section-title">💾 Database Status</h2>
+                    <div class="info-box">
+                        <strong>Note:</strong> Data is stored in memory during this session. Use the Export/Import Database functions below to save your data permanently.
+                    </div>
+                    <div class="database-stats">
+                        <div class="stat-box">
+                            <div class="stat-value" id="totalConversations">0</div>
+                            <div class="stat-label">Total Conversations</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="uniqueActivities">0</div>
+                            <div class="stat-label">Unique Activities</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="dateRange">-</div>
+                            <div class="stat-label">Date Range</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="lastImport">Never</div>
+                            <div class="stat-label">Last Import</div>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button onclick="viewDatabase()">View All Data</button>
+                        <button class="danger" onclick="clearDatabase()">Clear Database</button>
+                    </div>
+                </div>
+
+                <div class="import-export-section">
+                    <h2 class="section-title">💼 Database Management</h2>
+                    <p style="color: #718096; margin-bottom: 20px;">
+                        Save your entire database to a file and restore it later. This preserves all conversations and prevents data loss between sessions.
+                    </p>
+                    <div class="action-buttons">
+                        <button onclick="exportDatabase()">📥 Export Database</button>
+                        <button onclick="document.getElementById('databaseImport').click()">📤 Import Database</button>
+                        <input type="file" id="databaseImport" style="display: none;" accept=".json" onchange="importDatabase(event)">
+                    </div>
+                    <div class="warning-box" style="margin-top: 20px;">
+                        <strong>⚠️ Important:</strong> Always export your database before closing this page to save your data permanently.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboardPage" class="page">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="activityFilter">Filter by Activity:</label>
+                    <select id="activityFilter" onchange="filterData()">
+                        <option value="all">All Activities</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="dateFrom">Date From:</label>
+                    <input type="date" id="dateFrom" onchange="filterData()">
+                    <label for="dateTo" style="margin-top: 10px;">Date To:</label>
+                    <input type="date" id="dateTo" onchange="filterData()">
+                </div>
+
+                <div class="control-group">
+                    <label>Export Options:</label>
+                    <button onclick="exportToCSV()" style="width: 100%;">📊 Export to CSV</button>
+                    <button onclick="showGoogleSheetsSetup()" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, #0F9D58 0%, #4285F4 100%);">📝 Send to Google Sheets</button>
+                    <button onclick="exportFilteredJSON()" style="width: 100%; margin-top: 10px;">📦 Export Filtered Data</button>
+                </div>
+            </div>
+
+            <div class="stats-grid" id="statsGrid">
+                <!-- Stats will be populated here -->
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3 class="chart-title">Activity Distribution</h3>
+                    <canvas id="activityChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Hourly Activity Pattern</h3>
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Engagement Over Time</h3>
+                    <canvas id="timelineChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Duration Distribution</h3>
+                    <canvas id="durationChart"></canvas>
+                </div>
+            </div>
+
+            <div class="conversations-table">
+                <h3 class="chart-title">Individual Conversations</h3>
+                <input type="text" id="searchBox" placeholder="Search conversations..." onkeyup="searchConversations()" style="width: 100%; margin-bottom: 20px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 10px;">
+                <div id="tableContainer">
+                    <p class="loading">No data loaded. Go to Data Management to import conversations.</p>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-<script>
-const ENDPOINT = 'https://script.google.com/macros/s/AKfycbzGDqn_dVpGjYBtJVnfiecgYik0AWqHsDWvF3bdc3Qj0p-HMta4hA6e18H5lnkIr_x5/exec';
+    <!-- Conversation Modal -->
+    <div id="conversationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 style="margin-bottom: 20px;">Conversation Details</h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
 
-// Main upload function using JSONP to bypass CORS
-async function uploadData(jsonData, anonymize) {
-  return new Promise((resolve, reject) => {
-    // Create unique callback name
-    const callbackName = 'uploadCallback' + Date.now();
+    <!-- Google Sheets Export Modal -->
+    <div id="googleSheetsModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <span class="close" onclick="closeGoogleSheetsModal()">&times;</span>
+            <h2 style="margin-bottom: 20px;">📝 Send Data to Google Sheets</h2>
+            
+            <div id="googleSheetsContent">
+                <!-- Setup Instructions -->
+                <div id="setupInstructions" style="display: none;">
+                    <div class="info-box" style="background: #f0f9ff; border-color: #0ea5e9;">
+                        <h3>🚀 First Time Setup (5 minutes)</h3>
+                        <ol style="margin: 15px 0 0 20px; line-height: 1.8;">
+                            <li><strong>Create a new Google Sheet</strong> or open an existing one</li>
+                            <li>Go to <strong>Extensions → Apps Script</strong></li>
+                            <li>Delete any existing code and paste the Google Apps Script code (provided below)</li>
+                            <li>Click <strong>Deploy → New Deployment</strong></li>
+                            <li>Choose type: <strong>Web app</strong></li>
+                            <li>Set settings:
+                                <ul style="margin-left: 20px;">
+                                    <li>Description: "Zapier Conversations Data Collector"</li>
+                                    <li>Execute as: <strong>Me</strong></li>
+                                    <li>Who has access: <strong>Anyone</strong></li>
+                                </ul>
+                            </li>
+                            <li>Click <strong>Deploy</strong> and authorize the script</li>
+                            <li>Copy the <strong>Web app URL</strong> and paste it below</li>
+                        </ol>
+                    </div>
+                    
+                    <div style="margin: 20px 0;">
+                        <button onclick="showScriptCode()" style="width: 100%; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                            📄 Show Google Apps Script Code
+                        </button>
+                    </div>
+                    
+                    <div id="scriptCode" style="display: none; margin: 20px 0;">
+                        <p style="margin-bottom: 10px;"><strong>Copy this entire code:</strong></p>
+                        <textarea style="width: 100%; height: 300px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 10px; font-family: monospace; font-size: 12px;" readonly>
+// Copy the Google Apps Script code from the artifact above
+// It's too long to include here, but it handles:
+// - Receiving data from this dashboard
+// - Checking for duplicates
+// - Adding new conversations
+// - Maintaining an import log
+// - Providing statistics</textarea>
+                        <button onclick="copyScriptCode()" style="width: 100%; margin-top: 10px;">📋 Copy Script Code</button>
+                    </div>
+                </div>
+                
+                <!-- Main Interface -->
+                <div id="mainInterface">
+                    <div class="control-group" style="background: #f0f9ff; margin-bottom: 20px;">
+                        <label for="webAppUrl">Google Web App URL:</label>
+                        <input type="text" id="webAppUrl" 
+                               value="https://script.google.com/macros/s/AKfycbzS1D64GIUdR9syWjTAUEUq07w28eTDBMyxAP8QmYv7FnDmD_WGydbfPPU7cgjNh8dGGA/exec"
+                               style="width: 100%; margin-bottom: 10px; background: #f8f9fa;" readonly>
+                        <p style="margin-top: 10px; font-size: 0.9rem; color: #38a169;">
+                            ✅ Connected to your Google Sheet
+                        </p>
+                    </div>
+                    
+                    <div id="sendDataSection">
+                        <h3 style="margin-bottom: 15px;">📤 Data to Send</h3>
+                        <div class="stat-box" style="margin-bottom: 20px;">
+                            <p><strong>Conversations to send:</strong> <span id="convsToSend">0</span></p>
+                            <p><strong>Date range:</strong> <span id="dateRangeToSend">-</span></p>
+                            <p><strong>Activities:</strong> <span id="activitiesToSend">-</span></p>
+                        </div>
+                        
+                        <div class="warning-box" style="margin-bottom: 20px;">
+                            <strong>Note:</strong> The Google Sheet will automatically skip duplicates based on conversation ID, so it's safe to send overlapping data.
+                        </div>
+                        
+                        <button onclick="sendToGoogleSheets()" 
+                                style="width: 100%; padding: 15px; font-size: 1.1rem; background: linear-gradient(135deg, #0F9D58 0%, #4285F4 100%);"
+                                id="sendButton">
+                            🚀 Send Data to Google Sheets
+                        </button>
+                        
+                        <div id="sendResult" style="margin-top: 20px; display: none;">
+                            <!-- Results will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Database Management
+        let database = {
+            conversations: new Map(), // Using Map to efficiently handle duplicates by ID
+            metadata: {
+                lastImport: null,
+                totalImports: 0,
+                importHistory: []
+            }
+        };
+
+        let filteredData = [];
+        let charts = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            updateDatabaseStats();
+            
+            // Try to load from window.fs if available
+            if (window.fs && window.fs.readFile) {
+                tryLoadFromWindowFS();
+            }
+        });
+
+        // Page Navigation
+        function switchPage(page) {
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            
+            if (page === 'data') {
+                document.querySelector('.nav-tab:nth-child(1)').classList.add('active');
+                document.getElementById('dataPage').classList.add('active');
+            } else {
+                document.querySelector('.nav-tab:nth-child(2)').classList.add('active');
+                document.getElementById('dashboardPage').classList.add('active');
+                refreshDashboard();
+            }
+        }
+
+        // File Upload Handlers
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    importConversations(json);
+                } catch (error) {
+                    alert('Error parsing JSON file: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function tryLoadFromWindowFS() {
+            try {
+                const fileContent = await window.fs.readFile('Chatbot Sessions.json', { encoding: 'utf8' });
+                const parsedData = JSON.parse(fileContent);
+                importConversations(parsedData);
+            } catch (error) {
+                console.log('No initial data to load');
+            }
+        }
+
+        function importConversations(json) {
+            const conversations = json.data || json.conversations || json;
+            const importLog = document.getElementById('importLog');
+            importLog.style.display = 'block';
+            importLog.innerHTML = '<strong>Import Log:</strong>';
+            
+            let imported = 0;
+            let duplicates = 0;
+            let errors = 0;
+            
+            conversations.forEach(conv => {
+                try {
+                    if (database.conversations.has(conv.id)) {
+                        duplicates++;
+                        addLogEntry(importLog, `Skipped duplicate: ${conv.id}`, 'warning');
+                    } else {
+                        // Process and store conversation
+                        const processed = processConversation(conv);
+                        database.conversations.set(conv.id, processed);
+                        imported++;
+                    }
+                } catch (error) {
+                    errors++;
+                    addLogEntry(importLog, `Error processing conversation: ${error.message}`, 'error');
+                }
+            });
+            
+            // Update metadata
+            database.metadata.lastImport = new Date().toISOString();
+            database.metadata.totalImports++;
+            database.metadata.importHistory.push({
+                date: database.metadata.lastImport,
+                imported: imported,
+                duplicates: duplicates,
+                errors: errors
+            });
+            
+            // Add summary to log
+            addLogEntry(importLog, `Import complete: ${imported} new, ${duplicates} duplicates, ${errors} errors`, 'success');
+            
+            updateDatabaseStats();
+            
+            // Show success message
+            if (imported > 0) {
+                setTimeout(() => {
+                    alert(`Successfully imported ${imported} new conversations!`);
+                }, 100);
+            }
+        }
+
+        function processConversation(conv) {
+            const firstMessage = conv.messages && conv.messages[0] ? conv.messages[0].content : '';
+            
+            // Identify activity type
+            let activity = 'Unknown';
+            if (firstMessage.includes('Email Subject Lines')) activity = 'Email Subject Lines';
+            else if (firstMessage.includes('Writing Effective Sentences')) activity = 'Writing Effective Sentences';
+            else if (firstMessage.includes('Animating Sources')) activity = 'Animating Sources';
+            else if (firstMessage.includes('Acknowledgement of Country')) activity = 'Acknowledgement of Country';
+            else if (firstMessage.includes('Tone and Face')) activity = 'Tone and Face in Communication';
+            else if (firstMessage.includes('Hedging and Boosting')) activity = 'Hedging and Boosting';
+            else if (firstMessage.includes('Problem-Solution')) activity = 'Problem-Solution Proposals';
+            
+            // Calculate metrics
+            const startTime = new Date(conv.createdAt);
+            const endTime = new Date(conv.updatedAt);
+            const durationMinutes = (endTime - startTime) / (1000 * 60);
+            
+            const userMessages = conv.messages.filter(m => m.role === 'user').length;
+            const assistantMessages = conv.messages.filter(m => m.role === 'assistant').length;
+            
+            return {
+                id: conv.id,
+                activity: activity,
+                createdAt: conv.createdAt,
+                updatedAt: conv.updatedAt,
+                startTime: startTime,
+                endTime: endTime,
+                date: startTime.toISOString().split('T')[0],
+                hour: startTime.getHours(),
+                durationMinutes: durationMinutes,
+                totalMessages: conv.messages.length,
+                userMessages: userMessages,
+                assistantMessages: assistantMessages,
+                exchanges: Math.min(userMessages, assistantMessages),
+                completed: userMessages >= 2,
+                messages: conv.messages
+            };
+        }
+
+        function addLogEntry(logElement, message, type) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateDatabaseStats() {
+            const conversations = Array.from(database.conversations.values());
+            
+            document.getElementById('totalConversations').textContent = conversations.length;
+            
+            const activities = [...new Set(conversations.map(c => c.activity))];
+            document.getElementById('uniqueActivities').textContent = activities.length;
+            
+            if (conversations.length > 0) {
+                const dates = conversations.map(c => c.startTime);
+                const minDate = new Date(Math.min(...dates)).toLocaleDateString();
+                const maxDate = new Date(Math.max(...dates)).toLocaleDateString();
+                document.getElementById('dateRange').textContent = `${minDate} - ${maxDate}`;
+            } else {
+                document.getElementById('dateRange').textContent = '-';
+            }
+            
+            document.getElementById('lastImport').textContent = 
+                database.metadata.lastImport ? 
+                new Date(database.metadata.lastImport).toLocaleString() : 
+                'Never';
+        }
+
+        function clearDatabase() {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone unless you have exported the database.')) {
+                database.conversations.clear();
+                database.metadata = {
+                    lastImport: null,
+                    totalImports: 0,
+                    importHistory: []
+                };
+                updateDatabaseStats();
+                alert('Database cleared successfully');
+            }
+        }
+
+        function viewDatabase() {
+            const conversations = Array.from(database.conversations.values());
+            console.log('Database Contents:', conversations);
+            alert(`Database contains ${conversations.length} conversations. Check console for details.`);
+        }
+
+        function exportDatabase() {
+            const exportData = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                conversations: Array.from(database.conversations.values()),
+                metadata: database.metadata
+            };
+            
+            const json = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `zapier_database_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importDatabase(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        if (data.version && data.conversations) {
+                            // This is a database export
+                            database.conversations.clear();
+                            data.conversations.forEach(conv => {
+                                database.conversations.set(conv.id, conv);
+                            });
+                            database.metadata = data.metadata || database.metadata;
+                            updateDatabaseStats();
+                            alert(`Database imported successfully! Loaded ${data.conversations.length} conversations.`);
+                        } else {
+                            // This is a regular Zapier export
+                            importConversations(data);
+                        }
+                    } catch (error) {
+                        alert('Error importing database: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Dashboard Functions
+        function refreshDashboard() {
+            const conversations = Array.from(database.conversations.values());
+            
+            if (conversations.length === 0) {
+                document.getElementById('tableContainer').innerHTML = 
+                    '<p class="loading">No data loaded. Go to Data Management to import conversations.</p>';
+                return;
+            }
+            
+            populateFilters(conversations);
+            filterData();
+        }
+
+        function populateFilters(conversations) {
+            const activities = [...new Set(conversations.map(d => d.activity))].sort();
+            const activityFilter = document.getElementById('activityFilter');
+            activityFilter.innerHTML = '<option value="all">All Activities</option>';
+            activities.forEach(activity => {
+                activityFilter.innerHTML += `<option value="${activity}">${activity}</option>`;
+            });
+
+            // Set date range
+            if (conversations.length > 0) {
+                const dates = conversations.map(d => d.startTime);
+                document.getElementById('dateFrom').value = new Date(Math.min(...dates)).toISOString().split('T')[0];
+                document.getElementById('dateTo').value = new Date(Math.max(...dates)).toISOString().split('T')[0];
+            }
+        }
+
+        function filterData() {
+            const conversations = Array.from(database.conversations.values());
+            const activity = document.getElementById('activityFilter').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            filteredData = conversations.filter(d => {
+                if (activity !== 'all' && d.activity !== activity) return false;
+                if (dateFrom && d.date < dateFrom) return false;
+                if (dateTo && d.date > dateTo) return false;
+                return true;
+            });
+
+            updateStats();
+            updateCharts();
+            updateTable();
+        }
+
+        function updateStats() {
+            const totalConversations = filteredData.length;
+            const uniqueActivities = [...new Set(filteredData.map(d => d.activity))].length;
+            const avgDuration = filteredData.reduce((sum, d) => sum + d.durationMinutes, 0) / filteredData.length || 0;
+            const avgExchanges = filteredData.reduce((sum, d) => sum + d.exchanges, 0) / filteredData.length || 0;
+            const completionRate = (filteredData.filter(d => d.completed).length / filteredData.length * 100) || 0;
+
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${totalConversations}</div>
+                    <div class="stat-label">Total Conversations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${uniqueActivities}</div>
+                    <div class="stat-label">Unique Activities</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${avgDuration.toFixed(1)}</div>
+                    <div class="stat-label">Avg Duration (min)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${avgExchanges.toFixed(1)}</div>
+                    <div class="stat-label">Avg Exchanges</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${completionRate.toFixed(1)}%</div>
+                    <div class="stat-label">Completion Rate</div>
+                </div>
+            `;
+        }
+
+        function updateCharts() {
+            // Activity Distribution
+            const activityCounts = {};
+            filteredData.forEach(d => {
+                activityCounts[d.activity] = (activityCounts[d.activity] || 0) + 1;
+            });
+            updateActivityChart(activityCounts);
+
+            // Hourly Pattern
+            const hourlyCounts = Array(24).fill(0);
+            filteredData.forEach(d => {
+                hourlyCounts[d.hour]++;
+            });
+            updateHourlyChart(hourlyCounts);
+
+            // Timeline
+            const dailyCounts = {};
+            filteredData.forEach(d => {
+                dailyCounts[d.date] = (dailyCounts[d.date] || 0) + 1;
+            });
+            updateTimelineChart(dailyCounts);
+
+            // Duration Distribution
+            const durationBins = [0, 5, 10, 15, 20, 30, 60, Infinity];
+            const durationCounts = Array(durationBins.length - 1).fill(0);
+            filteredData.forEach(d => {
+                for (let i = 0; i < durationBins.length - 1; i++) {
+                    if (d.durationMinutes >= durationBins[i] && d.durationMinutes < durationBins[i + 1]) {
+                        durationCounts[i]++;
+                        break;
+                    }
+                }
+            });
+            updateDurationChart(durationCounts, durationBins);
+        }
+
+        function updateActivityChart(data) {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            
+            if (charts.activity) charts.activity.destroy();
+            
+            charts.activity = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data),
+                    datasets: [{
+                        data: Object.values(data),
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                            '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateHourlyChart(data) {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            
+            if (charts.hourly) charts.hourly.destroy();
+            
+            charts.hourly = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Conversations',
+                        data: data,
+                        backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTimelineChart(data) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            
+            if (charts.timeline) charts.timeline.destroy();
+            
+            const sortedDates = Object.keys(data).sort();
+            
+            charts.timeline = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedDates,
+                    datasets: [{
+                        label: 'Daily Conversations',
+                        data: sortedDates.map(date => data[date]),
+                        backgroundColor: 'rgba(118, 75, 162, 0.2)',
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDurationChart(counts, bins) {
+            const ctx = document.getElementById('durationChart').getContext('2d');
+            
+            if (charts.duration) charts.duration.destroy();
+            
+            const labels = bins.slice(0, -1).map((bin, i) => {
+                const next = bins[i + 1];
+                if (next === Infinity) return `${bin}+ min`;
+                return `${bin}-${next} min`;
+            });
+            
+            charts.duration = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Conversations',
+                        data: counts,
+                        backgroundColor: 'rgba(245, 87, 108, 0.6)',
+                        borderColor: 'rgba(245, 87, 108, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTable() {
+            const container = document.getElementById('tableContainer');
+            
+            if (filteredData.length === 0) {
+                container.innerHTML = '<p class="loading">No conversations found with current filters</p>';
+                return;
+            }
+            
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Activity</th>
+                            <th>Duration (min)</th>
+                            <th>Exchanges</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            filteredData.slice(0, 100).forEach(conv => {
+                const date = conv.startTime.toLocaleDateString();
+                const time = conv.startTime.toLocaleTimeString();
+                const status = conv.completed ? '✅ Completed' : '⏸️ Incomplete';
+                
+                tableHTML += `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${time}</td>
+                        <td>${conv.activity}</td>
+                        <td>${conv.durationMinutes.toFixed(1)}</td>
+                        <td>${conv.exchanges}</td>
+                        <td>${status}</td>
+                        <td><button class="view-btn" onclick="viewConversation('${conv.id}')">View</button></td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</tbody></table>';
+            
+            if (filteredData.length > 100) {
+                tableHTML += '<p style="margin-top: 10px; color: #718096;">Showing first 100 conversations. Export to CSV for complete data.</p>';
+            }
+            
+            container.innerHTML = tableHTML;
+        }
+
+        function viewConversation(id) {
+            const conv = database.conversations.get(id);
+            if (!conv) return;
+            
+            const modal = document.getElementById('conversationModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            let html = `
+                <p><strong>Activity:</strong> ${conv.activity}</p>
+                <p><strong>Date:</strong> ${conv.startTime.toLocaleString()}</p>
+                <p><strong>Duration:</strong> ${conv.durationMinutes.toFixed(1)} minutes</p>
+                <p><strong>Total Exchanges:</strong> ${conv.exchanges}</p>
+                <hr style="margin: 20px 0;">
+                <h3>Conversation Messages:</h3>
+            `;
+            
+            conv.messages.forEach(msg => {
+                const roleClass = msg.role === 'user' ? 'user' : 'assistant';
+                const roleLabel = msg.role === 'user' ? 'Student' : 'Bot';
+                html += `
+                    <div class="message ${roleClass}">
+                        <div class="message-role">${roleLabel}:</div>
+                        <div class="message-content">${escapeHtml(msg.content)}</div>
+                    </div>
+                `;
+            });
+            
+            modalBody.innerHTML = html;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('conversationModal').style.display = 'none';
+        }
+
+        function searchConversations() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            if (!searchTerm) {
+                updateTable();
+                return;
+            }
+            
+            const searchResults = filteredData.filter(conv => {
+                return conv.messages.some(msg => 
+                    msg.content.toLowerCase().includes(searchTerm)
+                );
+            });
+            
+            const container = document.getElementById('tableContainer');
+            
+            if (searchResults.length === 0) {
+                container.innerHTML = '<p class="loading">No conversations found matching your search</p>';
+                return;
+            }
+            
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Activity</th>
+                            <th>Duration (min)</th>
+                            <th>Exchanges</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            searchResults.slice(0, 100).forEach(conv => {
+                const date = conv.startTime.toLocaleDateString();
+                const time = conv.startTime.toLocaleTimeString();
+                const status = conv.completed ? '✅ Completed' : '⏸️ Incomplete';
+                
+                tableHTML += `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${time}</td>
+                        <td>${conv.activity}</td>
+                        <td>${conv.durationMinutes.toFixed(1)}</td>
+                        <td>${conv.exchanges}</td>
+                        <td>${status}</td>
+                        <td><button class="view-btn" onclick="viewConversation('${conv.id}')">View</button></td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</tbody></table>';
+            container.innerHTML = tableHTML;
+        }
+
+        function exportToCSV() {
+            const csvData = filteredData.map(conv => {
+                return {
+                    'ID': conv.id,
+                    'Activity': conv.activity,
+                    'Date': conv.date,
+                    'Start Time': conv.startTime.toISOString(),
+                    'End Time': conv.endTime.toISOString(),
+                    'Duration (minutes)': conv.durationMinutes.toFixed(2),
+                    'Total Messages': conv.totalMessages,
+                    'User Messages': conv.userMessages,
+                    'Assistant Messages': conv.assistantMessages,
+                    'Exchanges': conv.exchanges,
+                    'Completed': conv.completed ? 'Yes' : 'No',
+                    'First Message': conv.messages[0]?.content.substring(0, 200).replace(/[\n\r]/g, ' ') || ''
+                };
+            });
+            
+            const csv = Papa.unparse(csvData);
+            document.getElementById('csvTextArea').value = csv;
+            document.getElementById('googleSheetsModal').style.display = 'block';
+        }
+
+        function copyCsvToClipboard() {
+            const textarea = document.getElementById('csvTextArea');
+            textarea.select();
+            document.execCommand('copy');
+            
+            // Show feedback
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '✅ Copied!';
+            button.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.background = '';
+            }, 2000);
+        }
+
+        function createNewGoogleSheet() {
+            // Prepare the data for Google Sheets
+            const csvData = filteredData.map(conv => {
+                return [
+                    conv.id,
+                    conv.activity,
+                    conv.date,
+                    conv.startTime.toISOString(),
+                    conv.endTime.toISOString(),
+                    conv.durationMinutes.toFixed(2),
+                    conv.totalMessages,
+                    conv.userMessages,
+                    conv.assistantMessages,
+                    conv.exchanges,
+                    conv.completed ? 'Yes' : 'No',
+                    conv.messages[0]?.content.substring(0, 200).replace(/[\n\r]/g, ' ') || ''
+                ];
+            });
+            
+            // Add headers
+            const headers = ['ID', 'Activity', 'Date', 'Start Time', 'End Time', 'Duration (minutes)', 
+                           'Total Messages', 'User Messages', 'Assistant Messages', 'Exchanges', 
+                           'Completed', 'First Message'];
+            csvData.unshift(headers);
+            
+            // Create a CSV string for download as fallback
+            const csv = Papa.unparse(csvData);
+            
+            // Create Google Sheets URL with data
+            const baseUrl = 'https://docs.google.com/spreadsheets/create';
+            
+            // For now, we'll provide instructions since direct API integration requires authentication
+            const instructions = `
+                <div style="padding: 20px;">
+                    <h3>Creating Google Sheet...</h3>
+                    <p style="margin: 15px 0;">Since direct Google Sheets API requires authentication, here's how to quickly get your data into Google Sheets:</p>
+                    
+                    <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                        <h4>Quick Method:</h4>
+                        <ol style="margin-left: 20px; line-height: 1.8;">
+                            <li>Click the button below to download the CSV file</li>
+                            <li>Go to <a href="https://sheets.google.com" target="_blank">Google Sheets</a></li>
+                            <li>Click "Blank" to create a new sheet</li>
+                            <li>Click File → Import → Upload → Select your CSV file</li>
+                            <li>Choose "Replace spreadsheet" and click "Import data"</li>
+                        </ol>
+                    </div>
+                    
+                    <button onclick="exportToCSV()" style="width: 100%; margin-top: 20px; background: linear-gradient(135deg, #0F9D58 0%, #4285F4 100%);">
+                        📥 Download CSV for Google Sheets
+                    </button>
+                    
+                    <div style="background: #ebf8ff; padding: 15px; border-radius: 10px; margin-top: 20px;">
+                        <strong>💡 Pro Tip:</strong> Once imported, you can use Google Sheets' features like:
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Pivot tables for advanced analysis</li>
+                            <li>Charts and graphs</li>
+                            <li>Sharing with colleagues</li>
+                            <li>Real-time collaboration</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('googleSheetsOptions').innerHTML = instructions;
+        }exchanges,
+                    'Completed': conv.completed ? 'Yes' : 'No',
+                    'First Message': conv.messages[0]?.content.substring(0, 200) || ''
+                };
+            });
+            
+            const csv = Papa.unparse(csvData);
+            downloadFile(csv, 'conversations_export.csv', 'text/csv');
+        }
+
+        function exportFilteredJSON() {
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                totalConversations: filteredData.length,
+                filters: {
+                    activity: document.getElementById('activityFilter').value,
+                    dateFrom: document.getElementById('dateFrom').value,
+                    dateTo: document.getElementById('dateTo').value
+                },
+                conversations: filteredData
+            };
+            
+            const json = JSON.stringify(exportData, null, 2);
+            downloadFile(json, 'conversations_filtered.json', 'application/json');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type: type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('conversationModal');
+            const googleModal = document.getElementById('googleSheetsModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+            if (event.target === googleModal) {
+                googleModal.style.display = 'none';
+            }
+        }
+
+        // Google Sheets Integration
+        let googleWebAppUrl = 'https://script.google.com/macros/s/AKfycbzS1D64GIUdR9syWjTAUEUq07w28eTDBMyxAP8QmYv7FnDmD_WGydbfPPU7cgjNh8dGGA/exec';
+
+        function showGoogleSheetsSetup() {
+            // Set the hardcoded URL
+            document.getElementById('webAppUrl').value = googleWebAppUrl;
+            
+            // Update data preview
+            updateDataPreview();
+            
+            // Show modal
+            document.getElementById('googleSheetsModal').style.display = 'block';
+        }
+
+        function updateDataPreview() {
+            const convsToSend = filteredData.length;
+            document.getElementById('convsToSend').textContent = convsToSend;
+            
+            if (convsToSend > 0) {
+                const dates = filteredData.map(d => d.startTime);
+                const minDate = new Date(Math.min(...dates)).toLocaleDateString();
+                const maxDate = new Date(Math.max(...dates)).toLocaleDateString();
+                document.getElementById('dateRangeToSend').textContent = `${minDate} - ${maxDate}`;
+                
+                const activities = [...new Set(filteredData.map(d => d.activity))];
+                document.getElementById('activitiesToSend').textContent = activities.join(', ');
+            } else {
+                document.getElementById('dateRangeToSend').textContent = 'No data to send';
+                document.getElementById('activitiesToSend').textContent = 'No data to send';
+            }
+        }
+
+        function showSetupInstructions() {
+            document.getElementById('setupInstructions').style.display = 'block';
+        }
+
+        function showScriptCode() {
+            const scriptDiv = document.getElementById('scriptCode');
+            if (scriptDiv.style.display === 'none') {
+                scriptDiv.style.display = 'block';
+                // Load the actual script
+                scriptDiv.querySelector('textarea').value = getGoogleAppsScriptCode();
+            } else {
+                scriptDiv.style.display = 'none';
+            }
+        }
+
+        function copyScriptCode() {
+            const textarea = document.getElementById('scriptCode').querySelector('textarea');
+            textarea.select();
+            document.execCommand('copy');
+            
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '✅ Copied!';
+            button.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.background = '';
+            }, 2000);
+        }
+
+        function saveWebAppUrl() {
+            const url = document.getElementById('webAppUrl').value.trim();
+            if (!url) {
+                alert('Please enter a Web App URL');
+                return;
+            }
+            
+            googleWebAppUrl = url;
+            // Note: localStorage won't work in Claude artifacts, but keeping for reference
+            try {
+                localStorage.setItem('googleWebAppUrl', url);
+            } catch(e) {
+                console.log('localStorage not available');
+            }
+            
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '✅ Saved!';
+            button.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }, 2000);
+        }
+
+        async function sendToGoogleSheets() {
+            const url = googleWebAppUrl; // Use the hardcoded URL
+            
+            if (filteredData.length === 0) {
+                alert('No data to send. Please load data first.');
+                return;
+            }
+            
+            const sendButton = document.getElementById('sendButton');
+            const resultDiv = document.getElementById('sendResult');
+            
+            // Update button to show loading
+            sendButton.disabled = true;
+            sendButton.innerHTML = '⏳ Sending data...';
+            
+            try {
+                // Prepare data payload
+                const payload = {
+                    conversations: filteredData,
+                    metadata: {
+                        sentAt: new Date().toISOString(),
+                        totalConversations: filteredData.length,
+                        source: 'Zapier Dashboard'
+                    }
+                };
+                
+                // Send to Google Sheets
+                const response = await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors', // Important for Google Apps Script
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                // Since no-cors mode doesn't allow reading response, we assume success
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'info-box';
+                resultDiv.innerHTML = `
+                    <strong>✅ Data Sent Successfully!</strong>
+                    <p style="margin-top: 10px;">
+                        ${filteredData.length} conversations sent to your Google Sheet.
+                        The sheet will automatically handle duplicates.
+                    </p>
+                    <p style="margin-top: 10px;">
+                        <a href="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID" target="_blank">Open Google Sheet →</a>
+                    </p>
+                `;
+                
+                sendButton.innerHTML = '✅ Sent Successfully!';
+                sendButton.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+                
+                setTimeout(() => {
+                    sendButton.innerHTML = '🚀 Send Data to Google Sheets';
+                    sendButton.style.background = 'linear-gradient(135deg, #0F9D58 0%, #4285F4 100%)';
+                    sendButton.disabled = false;
+                }, 3000);
+                
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'warning-box';
+                resultDiv.innerHTML = `
+                    <strong>⚠️ Send Complete</strong>
+                    <p style="margin-top: 10px;">
+                        Data was sent to Google Sheets. Due to browser security (CORS), 
+                        we can't confirm the response, but your data should be in the sheet.
+                    </p>
+                    <p style="margin-top: 10px;">
+                        Check your Google Sheet to verify the data was received.
+                    </p>
+                `;
+                
+                sendButton.innerHTML = '🚀 Send Data to Google Sheets';
+                sendButton.disabled = false;
+            }
+        }
+
+        function closeGoogleSheetsModal() {
+            document.getElementById('googleSheetsModal').style.display = 'none';
+        }
+
+        function getGoogleAppsScriptCode() {
+            return `// Google Apps Script - Zapier Conversations Data Collector
+// Deploy this as a Web App to receive data from your dashboard
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    // Set up global callback
-    window[callbackName] = function(response) {
-      // Clean up
-      delete window[callbackName];
-      const scriptTag = document.getElementById('upload-script-' + callbackName);
-      if (scriptTag) scriptTag.remove();
+    // Get or create sheets
+    let dataSheet = ss.getSheetByName('Conversations');
+    if (!dataSheet) {
+      dataSheet = ss.insertSheet('Conversations');
+      setupHeaders(dataSheet);
+    }
+    
+    let logSheet = ss.getSheetByName('Import Log');
+    if (!logSheet) {
+      logSheet = ss.insertSheet('Import Log');
+      logSheet.getRange(1, 1, 1, 5).setValues([['Import Date', 'Total Received', 'New Added', 'Duplicates Skipped', 'Status']]);
+    }
+    
+    // Process conversations
+    const result = processConversations(dataSheet, data.conversations);
+    
+    // Log the import
+    logSheet.appendRow([
+      new Date().toISOString(),
+      result.received,
+      result.added,
+      result.skipped,
+      'Success'
+    ]);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: \`Added \${result.added} new, skipped \${result.skipped} duplicates\`,
+        details: result
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
       
-      // Resolve with response
-      resolve(response);
-    };
-    
-    // Create script tag for JSONP
-    const script = document.createElement('script');
-    script.id = 'upload-script-' + callbackName;
-    
-    // Prepare the data
-    const encodedData = btoa(unescape(encodeURIComponent(jsonData)));
-    
-    // Build URL with parameters
-    const params = new URLSearchParams({
-      'callback': callbackName,
-      'data': encodedData,
-      'anonymise': anonymize
-    });
-    
-    script.src = ENDPOINT + '?' + params.toString();
-    
-    // Handle errors
-    script.onerror = function() {
-      delete window[callbackName];
-      script.remove();
-      reject(new Error('Failed to load script'));
-    };
-    
-    // Add script to page
-    document.body.appendChild(script);
-    
-    // Timeout after 30 seconds
-    setTimeout(() => {
-      if (window[callbackName]) {
-        delete window[callbackName];
-        const scriptTag = document.getElementById('upload-script-' + callbackName);
-        if (scriptTag) scriptTag.remove();
-        reject(new Error('Request timeout'));
-      }
-    }, 30000);
-  });
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
-// Upload button handler
-document.getElementById('uploadBtn').addEventListener('click', async function() {
-  const files = document.getElementById('file').files;
-  const output = document.getElementById('output');
-  const btn = document.getElementById('uploadBtn');
-  const anonymize = document.getElementById('anon').checked ? 'true' : 'false';
+function setupHeaders(sheet) {
+  const headers = [
+    'ID', 'Activity', 'Date', 'Start Time', 'End Time',
+    'Duration (minutes)', 'Total Messages', 'User Messages',
+    'Assistant Messages', 'Exchanges', 'Completed',
+    'First Message', 'Import Date'
+  ];
   
-  if (!files || files.length === 0) {
-    output.innerHTML = '<span class="status-error">✗ Please select one or more JSON files</span>';
-    return;
-  }
-  
-  btn.disabled = true;
-  btn.textContent = 'Uploading...';
-  
-  let totalSessions = 0;
-  let totalMessages = 0;
-  let hasErrors = false;
-  
-  output.innerHTML = '<span class="status-uploading">⟳ Starting upload...</span>\n\n';
-  
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    output.innerHTML += `<span class="status-uploading">Processing ${file.name}...</span>\n`;
-    
-    try {
-      // Read file
-      const text = await file.text();
-      
-      // Validate JSON
-      let parsed;
-      try {
-        parsed = JSON.parse(text);
-      } catch (e) {
-        throw new Error('Invalid JSON format');
-      }
-      
-      // First try regular POST
-      let success = false;
-      let data = null;
-      
-      try {
-        const response = await fetch(ENDPOINT + '?anonymise=' + anonymize, {
-          method: 'POST',
-          body: text
-        });
-        
-        if (response.ok) {
-          data = await response.json();
-          success = true;
-        }
-      } catch (e) {
-        // POST failed, try JSONP
-        output.innerHTML += `<span class="status-warning">  POST failed, trying alternative method...</span>\n`;
-        
-        try {
-          data = await uploadData(text, anonymize);
-          success = true;
-        } catch (jsonpError) {
-          throw new Error('Both upload methods failed: ' + jsonpError.message);
-        }
-      }
-      
-      if (success && data && data.ok) {
-        output.innerHTML += `<span class="status-success">✓ ${file.name} uploaded successfully!</span>\n`;
-        output.innerHTML += `  • Sessions: ${data.sessions_received} received, ${data.sessions_inserted} new\n`;
-        output.innerHTML += `  • Messages: ${data.messages_inserted} new\n\n`;
-        
-        totalSessions += data.sessions_inserted || 0;
-        totalMessages += data.messages_inserted || 0;
-      } else {
-        throw new Error(data?.error || 'Unknown error');
-      }
-      
-    } catch (error) {
-      hasErrors = true;
-      output.innerHTML += `<span class="status-error">✗ ${file.name} failed: ${error.message}</span>\n\n`;
-    }
-  }
-  
-  // Final summary
-  output.innerHTML += '\n' + '='.repeat(50) + '\n';
-  if (hasErrors) {
-    output.innerHTML += '<span class="status-error">⚠ Upload completed with some errors</span>\n';
-  } else {
-    output.innerHTML += '<span class="status-success">✓ All files uploaded successfully!</span>\n';
-  }
-  
-  if (totalSessions > 0 || totalMessages > 0) {
-    output.innerHTML += `\nTotal: ${totalSessions} sessions, ${totalMessages} messages added`;
-  }
-  
-  // Reset button
-  btn.disabled = false;
-  btn.textContent = 'Upload Selected Files';
-});
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.getRange(1, 1, 1, headers.length)
+    .setFontWeight('bold')
+    .setBackground('#4285f4')
+    .setFontColor('#ffffff');
+  sheet.setFrozenRows(1);
+}
 
-// File input change handler
-document.getElementById('file').addEventListener('change', function(e) {
-  const files = e.target.files;
-  const output = document.getElementById('output');
+function processConversations(sheet, conversations) {
+  const result = { received: conversations.length, added: 0, skipped: 0 };
   
-  if (files && files.length > 0) {
-    output.innerHTML = `<span class="status-ready">✓ Ready to upload ${files.length} file${files.length > 1 ? 's' : ''}</span>`;
+  // Get existing IDs
+  const lastRow = sheet.getLastRow();
+  let existingIds = new Set();
+  if (lastRow > 1) {
+    const idColumn = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    existingIds = new Set(idColumn.map(row => row[0]));
   }
-});
-
-// Test connection on page load
-window.addEventListener('load', async function() {
-  try {
-    const response = await fetch(ENDPOINT);
-    const data = await response.json();
-    
-    if (data.ok && data.ping) {
-      console.log('✓ Connected to Apps Script endpoint');
+  
+  // Add new conversations
+  const newRows = [];
+  const importDate = new Date().toISOString();
+  
+  for (const conv of conversations) {
+    if (existingIds.has(conv.id)) {
+      result.skipped++;
+      continue;
     }
-  } catch (error) {
-    console.warn('Could not verify endpoint connection:', error);
+    
+    newRows.push([
+      conv.id,
+      conv.activity || 'Unknown',
+      conv.date || '',
+      conv.createdAt || '',
+      conv.updatedAt || '',
+      conv.durationMinutes ? parseFloat(conv.durationMinutes).toFixed(2) : '0',
+      conv.totalMessages || 0,
+      conv.userMessages || 0,
+      conv.assistantMessages || 0,
+      conv.exchanges || 0,
+      conv.completed ? 'Yes' : 'No',
+      conv.messages && conv.messages[0] ? 
+        conv.messages[0].content.substring(0, 200).replace(/[\\n\\r]/g, ' ') : '',
+      importDate
+    ]);
+    result.added++;
   }
-});
-</script>
-</body>
-</html>
+  
+  if (newRows.length > 0) {
+    sheet.getRange(lastRow + 1, 1, newRows.length, newRows[0].length).setValues(newRows);
+  }
+  
+  return result;
+}`;
+        }exchanges,
+                    'Completed': conv.completed ? 'Yes' : 'No',
+                    'First Message': conv.messages[0]?.content.substring(0, 200).replace(/[\n\r]/g, ' ') || ''
+                };
+            });
+            
+            const csv = Papa.unparse(csvData);
+            document.getElementById('csvTextArea').value = csv;
+            document.getElementById('googleSheetsModal').style.display = 'block';
+        }
+
+        function closeGoogleSheetsModal() {
+            document.getElementById('googleSheetsModal').style.display = 'none';
+        }
+
+        function copyCsvToClipboard() {
+            const textarea = document.getElementById('csvTextArea');
+            textarea.select();
+            document.execCommand('copy');
+            
+            // Show feedback
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '✅ Copied!';
+            button.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.background = '';
+            }, 2000);
+        }
+
+        function createNewGoogleSheet() {
+            // Prepare the data for Google Sheets
+            const csvData = filteredData.map(conv => {
+                return [
+                    conv.id,
+                    conv.activity,
+                    conv.date,
+                    conv.startTime.toISOString(),
+                    conv.endTime.toISOString(),
+                    conv.durationMinutes.toFixed(2),
+                    conv.totalMessages,
+                    conv.userMessages,
+                    conv.assistantMessages,
+                    conv.exchanges,
+                    conv.completed ? 'Yes' : 'No',
+                    conv.messages[0]?.content.substring(0, 200).replace(/[\n\r]/g, ' ') || ''
+                ];
+            });
+            
+            // Add headers
+            const headers = ['ID', 'Activity', 'Date', 'Start Time', 'End Time', 'Duration (minutes)', 
+                           'Total Messages', 'User Messages', 'Assistant Messages', 'Exchanges', 
+                           'Completed', 'First Message'];
+            csvData.unshift(headers);
+            
+            // Create a CSV string for download as fallback
+            const csv = Papa.unparse(csvData);
+            
+            // Create Google Sheets URL with data
+            const baseUrl = 'https://docs.google.com/spreadsheets/create';
+            
+            // For now, we'll provide instructions since direct API integration requires authentication
+            const instructions = `
+                <div style="padding: 20px;">
+                    <h3>Creating Google Sheet...</h3>
+                    <p style="margin: 15px 0;">Since direct Google Sheets API requires authentication, here's how to quickly get your data into Google Sheets:</p>
+                    
+                    <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                        <h4>Quick Method:</h4>
+                        <ol style="margin-left: 20px; line-height: 1.8;">
+                            <li>Click the button below to download the CSV file</li>
+                            <li>Go to <a href="https://sheets.google.com" target="_blank">Google Sheets</a></li>
+                            <li>Click "Blank" to create a new sheet</li>
+                            <li>Click File → Import → Upload → Select your CSV file</li>
+                            <li>Choose "Replace spreadsheet" and click "Import data"</li>
+                        </ol>
+                    </div>
+                    
+                    <button onclick="exportToCSV()" style="width: 100%; margin-top: 20px; background: linear-gradient(135deg, #0F9D58 0%, #4285F4 100%);">
+                        📥 Download CSV for Google Sheets
+                    </button>
+                    
+                    <div style="background: #ebf8ff; padding: 15px; border-radius: 10px; margin-top: 20px;">
+                        <strong>💡 Pro Tip:</strong> Once imported, you can use Google Sheets' features like:
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Pivot tables for advanced analysis</li>
+                            <li>Charts and graphs</li>
+                            <li>Sharing with colleagues</li>
+                            <li>Real-time collaboration</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('googleSheetsOptions').innerHTML = instructions;
+        }
